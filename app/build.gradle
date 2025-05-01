@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace 'xyz.sheeld.app'
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         applicationId "xyz.sheeld.app"
