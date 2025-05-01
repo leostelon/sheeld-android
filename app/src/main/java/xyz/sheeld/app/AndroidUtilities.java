@@ -21,7 +21,7 @@ public class AndroidUtilities {
     public static Typeface getLightTypeface(Context context) {
         return ResourcesCompat.getFont(context, R.font.poppins_light);
     }
-    public static Typeface getRefularTypeface(Context context) {
+    public static Typeface getRegularTypeface(Context context) {
         return ResourcesCompat.getFont(context, R.font.poppins_regular);
     }
     public static Typeface getMediumTypeface(Context context) {

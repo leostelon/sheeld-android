@@ -1,0 +1,5 @@
+package xyz.sheeld.app;
+
+public interface DataUpdateListener {
+    void onDataUpdated(long[] stats);
+}

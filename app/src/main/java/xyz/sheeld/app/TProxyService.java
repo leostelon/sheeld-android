@@ -1,30 +1,34 @@
-package com.example.vpn;
+package xyz.sheeld.app;
+
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.pm.ServiceInfo;
+import android.net.VpnService;
+import android.os.Build;
+import android.os.ParcelFileDescriptor;
+import android.util.Log;
+
+import androidx.core.app.NotificationCompat;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.content.Context;
-import android.os.Build;
-import android.os.ParcelFileDescriptor;
-import android.app.Notification;
-import android.app.PendingIntent;
-import android.content.Intent;
-import android.net.VpnService;
-import android.content.pm.PackageManager.NameNotFoundException;
-import android.content.pm.ServiceInfo;
-
-import androidx.core.app.NotificationCompat;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class TProxyService extends VpnService {
     private static native void TProxyStartService(String config_path, int fd);
     private static native void TProxyStopService();
     private static native long[] TProxyGetStats();
+    private Timer timer;
 
-    public static final String ACTION_CONNECT = "com.example.vpn.CONNECT";
-    public static final String ACTION_DISCONNECT = "com.example.vpn.DISCONNECT";
+    public static final String ACTION_CONNECT = "xyz.sheeld.app.CONNECT";
+    public static final String ACTION_DISCONNECT = "xyz.sheeld.app.DISCONNECT";
 
     static {
         System.loadLibrary("hev-socks5-tunnel");
@@ -61,7 +65,7 @@ public class TProxyService extends VpnService {
 
         /* VPN */
         String session = new String();
-        VpnService.Builder builder = new VpnService.Builder();
+        Builder builder = new Builder();
         builder.setBlocking(false);
         builder.setMtu(prefs.getTunnelMtu());
         if (prefs.getIpv4()) {
@@ -146,6 +150,7 @@ public class TProxyService extends VpnService {
         String channelName = "socks5";
         initNotificationChannel(channelName);
         createNotification(channelName);
+        logStats();
     }
 
     public void stopService() {
@@ -163,8 +168,8 @@ public class TProxyService extends VpnService {
         } catch (IOException e) {
         }
         tunFd = null;
-
-        System.exit(0);
+        timer.cancel();
+//        System.exit(0);
     }
 
     private void createNotification(String channelName) {
@@ -191,5 +196,16 @@ public class TProxyService extends VpnService {
             NotificationChannel channel = new NotificationChannel(channelName, name, NotificationManager.IMPORTANCE_DEFAULT);
             notificationManager.createNotificationChannel(channel);
         }
+    }
+
+    private void logStats() {
+        timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                long[] stats = TProxyGetStats();
+                DataManager.getInstance().setData(stats);
+            }
+        }, 0, 1000);
     }
 }
