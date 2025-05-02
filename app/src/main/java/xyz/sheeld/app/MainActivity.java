@@ -4,9 +4,14 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
+import android.net.VpnService;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
@@ -19,7 +24,13 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.ViewCompat;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements DataUpdateListener {
+    private TextView statusUploadSpeed;
+    private TextView statusDownloadSpeed;
+    private static final int REQUEST_VPN_PERMISSION = 0x0F;
+    private Preferences prefs;
+    private static long[] oldStats = new long[]{0L, 0L, 0L, 0L};
+
     // Animation Components
     private View connectButtonWaveView;
     private AnimatorSet animatorSet;
@@ -28,6 +39,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (DataManager.getInstance().isListenerActive()) {
+            DataManager.getInstance().addListener(this);
+        }
 
         prefs = new Preferences(this);
 
@@ -37,7 +51,8 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout linearLayout = new LinearLayout(context);
         ViewCompat.setOnApplyWindowInsetsListener(linearLayout,(v, insets) -> {
             int topInset = insets.getSystemWindowInsetTop();
-            linearLayout.setPadding(0, topInset, 0, 0);
+            int bottomInset = insets.getSystemWindowInsetBottom();
+            linearLayout.setPadding(32, topInset, 32, bottomInset);
             return insets;
         });
 
@@ -84,11 +99,9 @@ public class MainActivity extends AppCompatActivity {
 
 
         // Connect Button
-        // Create the root layout
         FrameLayout connectButtonParentLayout = new FrameLayout(this);
-        linearLayout.addView(connectButtonParentLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.CENTER, 0, 0, 0, 12));
+        linearLayout.addView(connectButtonParentLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 1, Gravity.CENTER));
 
-        // Create the wave view (circle)
         connectButtonWaveView = new View(this);
         GradientDrawable circleDrawable = new GradientDrawable();
         circleDrawable.setShape(GradientDrawable.OVAL);
@@ -101,8 +114,13 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout connectButton = new LinearLayout(context);
         connectButton.setPadding(24,12, 24, 12);
         connectButton.setOnClickListener(view -> {
-            // Start wave animation
-            toggleWaveAnimation();
+            boolean isEnable = prefs.getEnable();
+            prefs.setEnable(!isEnable);
+            if (isEnable) {
+                stopVPN();
+            } else {
+                startVPN(context);
+            }
         });
 
         ImageView connectButtonIcon = new ImageView(context);
@@ -110,15 +128,82 @@ public class MainActivity extends AppCompatActivity {
         connectButtonIcon.setImageResource(R.drawable.power_button);
         connectButtonIcon.setForegroundGravity(Gravity.CENTER);
 
-        // Add views to root layout
         connectButtonParentLayout.addView(connectButtonWaveView, LayoutHelper.createFrame(300, 300, Gravity.CENTER));   // behind
         connectButtonParentLayout.addView(connectButton, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER)); // on top
 
+        ImageView globeImage = new ImageView(context);
+        linearLayout.addView(globeImage, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, 0, -24));
+        globeImage.setImageResource(R.drawable.globe);
+
+        // Status Containers
+        LinearLayout statusContainer = new LinearLayout(context);
+        linearLayout.addView(statusContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+        statusContainer.setOrientation(LinearLayout.HORIZONTAL);
+        statusContainer.setPadding(0, 24, 0, 24);
+        GradientDrawable statusContainerBackground = new GradientDrawable();
+        statusContainer.setBackground(statusContainerBackground);
+        statusContainerBackground.setStroke(2, getResources().getColor(R.color.border));
+        statusContainerBackground.setCornerRadius(24);
+
+        // Download
+        LinearLayout statusDownloadContainer = new LinearLayout(context);
+        statusContainer.addView(statusDownloadContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 1, 1));
+        statusDownloadContainer.setOrientation(LinearLayout.HORIZONTAL);
+        statusDownloadContainer.setGravity(Gravity.CENTER);
+
+        ImageView statusDownloadIcon = new ImageView(context);
+        statusDownloadContainer.addView(statusDownloadIcon, LayoutHelper.createLinear(48, 48, 0, 0, 12, 0));
+        statusDownloadIcon.setImageResource(R.drawable.download);
+
+        LinearLayout statusDownloadStats = new LinearLayout(context);
+        statusDownloadContainer.addView(statusDownloadStats);
+        statusDownloadStats.setOrientation(LinearLayout.VERTICAL);
+
+        statusDownloadSpeed = new TextView(context);
+        statusDownloadStats.addView(statusDownloadSpeed);
+        statusDownloadSpeed.setTypeface(AndroidUtilities.getMediumTypeface(context));
+        statusDownloadSpeed.setText("0 MB/s");
+
+        TextView statusDownloadSpeedTitle = new TextView(context);
+        statusDownloadStats.addView(statusDownloadSpeedTitle);
+        statusDownloadSpeedTitle.setText("Download");
+        statusDownloadSpeedTitle.setTypeface(AndroidUtilities.getRegularTypeface(context));
+
+        // Divider
+        View divider = new View(context);
+        divider.setBackgroundColor(getResources().getColor(R.color.border));
+        statusContainer.addView(divider, LayoutHelper.createLinear(4, 50,0, 8, 0, 8));
+
+        // Upload
+        LinearLayout statusUploadContainer = new LinearLayout(context);
+        statusContainer.addView(statusUploadContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 1, 1));
+        statusUploadContainer.setOrientation(LinearLayout.HORIZONTAL);
+        statusUploadContainer.setGravity(Gravity.CENTER);
+
+        ImageView statusUploadIcon = new ImageView(context);
+        statusUploadContainer.addView(statusUploadIcon, LayoutHelper.createLinear(48, 48, 0, 0, 12, 0));
+        statusUploadIcon.setImageResource(R.drawable.upload);
+
+        LinearLayout statusUploadStats = new LinearLayout(context);
+        statusUploadContainer.addView(statusUploadStats);
+        statusUploadStats.setOrientation(LinearLayout.VERTICAL);
+
+        statusUploadSpeed = new TextView(context);
+        statusUploadStats.addView(statusUploadSpeed);
+        statusUploadSpeed.setText("0 MB/s");
+        statusUploadSpeed.setTypeface(AndroidUtilities.getMediumTypeface(context));
+
+        TextView statusUploadSpeedTitle = new TextView(context);
+        statusUploadStats.addView(statusUploadSpeedTitle);
+        statusUploadSpeedTitle.setText("Upload");
+        statusUploadSpeedTitle.setTypeface(AndroidUtilities.getRegularTypeface(context));
+
         setContentView(linearLayout);
+        updateStates();
     }
 
-    private void toggleWaveAnimation() {
-        if (animatorSet != null) {
+    private void toggleWaveAnimation(boolean isEnable) {
+        if (isEnable) {
             stopWaveAnimation();
         } else {
             startWaveAnimation();
@@ -158,5 +243,85 @@ public class MainActivity extends AppCompatActivity {
         connectButtonWaveView.setAlpha(0f);
         connectButtonWaveView.setScaleX(0f);
         connectButtonWaveView.setScaleY(0f);
+    }
+
+    private void startVPN(Context context) {
+        Intent intent = VpnService.prepare(context);
+        if (intent != null) {
+            startActivityForResult(intent, REQUEST_VPN_PERMISSION);
+        } else {
+            onActivityResult(REQUEST_VPN_PERMISSION, RESULT_OK, null);
+        }
+
+        Intent vpnIntent = new Intent(this, TProxyService.class);
+
+        prefs.setSocksAddress("192.168.18.4");
+        prefs.setSocksPort(3000);
+
+        startService(vpnIntent.setAction(TProxyService.ACTION_CONNECT));
+        updateStates();
+    }
+
+    private void stopVPN() {
+        Intent vpnIntent = new Intent(this, TProxyService.class);
+        startService(vpnIntent.setAction(TProxyService.ACTION_DISCONNECT));
+        updateStates();
+    }
+
+    private void updateStates() {
+        boolean isEnable = prefs.getEnable();
+        toggleWaveAnimation(!isEnable);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        DataManager.getInstance().addListener(this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        DataManager.getInstance().removeListener(this);
+    }
+
+    @Override
+    public void onDataUpdated(long[] stats) {
+        String downloadSpeed = formatBytes(stats[3] - oldStats[3]);
+        String uploadSpeed = formatBytes(stats[1] - oldStats[1]);
+        Log.d("MainActivitys", downloadSpeed);
+        oldStats = stats;
+//        new Handler(Looper.getMainLooper()).post(() -> {
+//            statusDownloadSpeed.setText(downloadSpeed);
+//            statusUploadSpeed.setText(uploadSpeed);
+//        });
+
+        if (!isFinishing() && !isDestroyed()) {
+        runOnUiThread(() -> {
+            Log.d("MainActivitysss", String.valueOf(statusDownloadSpeed==null));
+
+            statusDownloadSpeed.setText(downloadSpeed);
+            statusUploadSpeed.setText(uploadSpeed);
+        });
+        }
+    }
+
+    public static String formatBytes(long bytes) {
+        long kb = 1024;
+        long mb = kb * 1024;
+        if (bytes < kb) {
+            return bytes + " bytes";
+        } else if (bytes < mb) {
+            double resultKb = (double) bytes / kb;
+            return String.format("%.2f KB/s", resultKb);
+        } else {
+            double resultMb = (double) bytes / mb;
+            return String.format("%.2f MB/s", resultMb);
+        }
     }
 }

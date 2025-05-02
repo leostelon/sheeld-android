@@ -1,18 +1,11 @@
-/*
- ============================================================================
- Name        : Perferences.java
- Author      : hev <r@hev.cc>
- Copyright   : Copyright (c) 2023 xyz
- Description : Perferences
- ============================================================================
- */
 
-package com.example.vpn;
+package xyz.sheeld.app;
 
-import java.util.Set;
-import java.util.HashSet;
 import android.content.Context;
 import android.content.SharedPreferences;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class Preferences
 {
