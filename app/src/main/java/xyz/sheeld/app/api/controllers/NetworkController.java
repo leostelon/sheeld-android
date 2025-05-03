@@ -45,13 +45,16 @@ public class NetworkController {
                     @Override
                     public void onFailure(@NonNull Call<List<GetNearestNodeResponseDTO>> call, @NonNull Throwable throwable) {
                         Log.e("getsNodes", throwable.toString());
+                        callback.onFailure(throwable);
                     }
                 }
         );
     }
 
-    public void getNearestNode(final DataCallbackInterface<Node> callback) {
-        Call<GetNearestNodeResponseDTO> call = apiService.getNearestNode();
+    public void getNearestNode(String nodeApiUrl, final DataCallbackInterface<Node> callback) {
+        NetworkRoute dynamicApiService = RetrofitClient.getDynamicClient(nodeApiUrl).create(NetworkRoute.class);
+        Call<GetNearestNodeResponseDTO> call = dynamicApiService.getNearestNode();
+        Log.d("getNearestNode", "hello");
         call.enqueue(
                 new Callback<GetNearestNodeResponseDTO>() {
                     @Override
@@ -72,6 +75,7 @@ public class NetworkController {
                     @Override
                     public void onFailure(@NonNull Call<GetNearestNodeResponseDTO> call, @NonNull Throwable throwable) {
                         Log.e("getNearestNode", throwable.toString());
+                        callback.onFailure(throwable);
                     }
                 }
         );

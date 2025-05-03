@@ -24,6 +24,7 @@ import androidx.core.view.ViewCompat;
 
 import java.util.List;
 
+import xyz.sheeld.app.api.controllers.ClientController;
 import xyz.sheeld.app.api.controllers.NetworkController;
 import xyz.sheeld.app.api.interfaces.DataCallbackInterface;
 import xyz.sheeld.app.api.types.Node;
@@ -31,6 +32,7 @@ import xyz.sheeld.app.api.types.Node;
 public class SelectCountryActivity extends AppCompatActivity {
     private LinearLayout nodesContainer;
     private final NetworkController networkController = new NetworkController();
+    private final ClientController clientController = new ClientController();
     private Preferences prefs;
 
     @Override
@@ -108,8 +110,58 @@ public class SelectCountryActivity extends AppCompatActivity {
         connect.setGravity(Gravity.CENTER);
         connect.setTextColor(getResources().getColor(R.color.primary));
         connect.setTypeface(AndroidUtilities.getSemiBoldTypeface(context));
+        connect.setOnClickListener(view -> getNearestNode(node.ip, node.networkPort));
 
         return  linearLayout;
+    }
+
+    private void getNearestNode(String ip, int networkPort) {
+        Context context = SelectCountryActivity.this;
+        Dialog dialog = new Dialog(context);
+        ProgressBar progressBar = new ProgressBar(context);
+
+        String nodeApiUrl = "http://" + ip + ":" + (networkPort + 1);
+        networkController.getNearestNode(nodeApiUrl, new DataCallbackInterface<Node>() {
+            @Override
+            public void onSuccess(Node node) {
+                dialog.dismiss();
+                Toast.makeText(context, "fetched", Toast.LENGTH_SHORT).show();
+                connectToNearestNode(node.ip, node.networkPort);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                dialog.dismiss();
+                Log.d("getNetworks", t.toString());
+            }
+        });
+        dialog.setContentView(progressBar);
+        dialog.show();
+    }
+
+    private void connectToNearestNode(String ip, int networkPort) {
+        Context context = SelectCountryActivity.this;
+        Dialog dialog = new Dialog(context);
+        ProgressBar progressBar = new ProgressBar(context);
+
+        clientController.joinClient(ip, networkPort, new DataCallbackInterface<Boolean>() {
+            @Override
+            public void onSuccess(Boolean result) {
+                dialog.dismiss();
+                Toast.makeText(context, "Connected to VPN", Toast.LENGTH_SHORT).show();
+                if (result) {
+//                    connect to vpn here
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                dialog.dismiss();
+                Log.d("connectToNearestNode", t.toString());
+            }
+        });
+        dialog.setContentView(progressBar);
+        dialog.show();
     }
 
     private void getNetworks() {
