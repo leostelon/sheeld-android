@@ -19,9 +19,9 @@ import xyz.sheeld.app.api.types.Node;
 public class NetworkController {
     private final NetworkRoute apiService = RetrofitClient.getClient().create(NetworkRoute.class);
 
-    public void getsNodes(final DataCallbackInterface<List<Node>> callback) {
-        Log.d("getNetworks", "enter");
+    public void getNodes(final DataCallbackInterface<List<Node>> callback) {
         Call<List<GetNearestNodeResponseDTO>> call = apiService.getNodes();
+
         call.enqueue(
                 new Callback<List<GetNearestNodeResponseDTO>>() {
                     @Override
@@ -54,7 +54,7 @@ public class NetworkController {
     public void getNearestNode(String nodeApiUrl, final DataCallbackInterface<Node> callback) {
         NetworkRoute dynamicApiService = RetrofitClient.getDynamicClient(nodeApiUrl).create(NetworkRoute.class);
         Call<GetNearestNodeResponseDTO> call = dynamicApiService.getNearestNode();
-        Log.d("getNearestNode", "hello");
+
         call.enqueue(
                 new Callback<GetNearestNodeResponseDTO>() {
                     @Override

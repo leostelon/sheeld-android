@@ -2,9 +2,11 @@ package xyz.sheeld.app;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.net.VpnService;
 import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
@@ -28,12 +30,14 @@ import xyz.sheeld.app.api.controllers.ClientController;
 import xyz.sheeld.app.api.controllers.NetworkController;
 import xyz.sheeld.app.api.interfaces.DataCallbackInterface;
 import xyz.sheeld.app.api.types.Node;
+import xyz.sheeld.app.vpn.VPN;
 
 public class SelectCountryActivity extends AppCompatActivity {
     private LinearLayout nodesContainer;
     private final NetworkController networkController = new NetworkController();
     private final ClientController clientController = new ClientController();
     private Preferences prefs;
+    private static final int REQUEST_VPN_PERMISSION = 0x0F;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,7 +114,9 @@ public class SelectCountryActivity extends AppCompatActivity {
         connect.setGravity(Gravity.CENTER);
         connect.setTextColor(getResources().getColor(R.color.primary));
         connect.setTypeface(AndroidUtilities.getSemiBoldTypeface(context));
-        connect.setOnClickListener(view -> getNearestNode(node.ip, node.networkPort));
+        connect.setOnClickListener(view -> {
+            getNearestNode(node.ip, node.networkPort);
+        });
 
         return  linearLayout;
     }
@@ -120,13 +126,13 @@ public class SelectCountryActivity extends AppCompatActivity {
         Dialog dialog = new Dialog(context);
         ProgressBar progressBar = new ProgressBar(context);
 
-        String nodeApiUrl = "http://" + ip + ":" + (networkPort + 1);
+        String nodeApiUrl = parseNodeAPIURL(ip, networkPort);
         networkController.getNearestNode(nodeApiUrl, new DataCallbackInterface<Node>() {
             @Override
             public void onSuccess(Node node) {
                 dialog.dismiss();
                 Toast.makeText(context, "fetched", Toast.LENGTH_SHORT).show();
-                connectToNearestNode(node.ip, node.networkPort);
+                connectToNearestNode(node.ip, node.networkPort, ip, networkPort);
             }
 
             @Override
@@ -139,18 +145,24 @@ public class SelectCountryActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    private void connectToNearestNode(String ip, int networkPort) {
+    private void connectToNearestNode(String nearestNodeIp, int nearestNodeNetworkPort, String targetNodeIp, int targetNodeNetworkPort) {
         Context context = SelectCountryActivity.this;
         Dialog dialog = new Dialog(context);
         ProgressBar progressBar = new ProgressBar(context);
 
-        clientController.joinClient(ip, networkPort, new DataCallbackInterface<Boolean>() {
+        String nodeApiUrl = parseNodeAPIURL(nearestNodeIp, nearestNodeNetworkPort);
+        clientController.joinClient(nodeApiUrl, targetNodeIp, targetNodeNetworkPort, new DataCallbackInterface<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
                 dialog.dismiss();
-                Toast.makeText(context, "Connected to VPN", Toast.LENGTH_SHORT).show();
                 if (result) {
-//                    connect to vpn here
+                    // connect to vpn here
+                    // Set preference to nearest network
+                    VPN.getInstance(context).setNewNetwork(nearestNodeIp, nearestNodeNetworkPort);
+                    // First stop current vpn
+                    stopVPN();
+                    // Then start the vpn
+                    startVPN(context);
                 }
             }
 
@@ -169,11 +181,10 @@ public class SelectCountryActivity extends AppCompatActivity {
         Dialog dialog = new Dialog(context);
         ProgressBar progressBar = new ProgressBar(context);
 
-        networkController.getsNodes(new DataCallbackInterface<List<Node>>() {
+        networkController.getNodes(new DataCallbackInterface<List<Node>>() {
             @Override
             public void onSuccess(List<Node> nodes) {
                 dialog.dismiss();
-                Toast.makeText(context, "fetched", Toast.LENGTH_SHORT).show();
                 nodes.forEach(node -> {
                     nodesContainer.addView(getNodeTile(context, node), LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 6, 0, 6));
                 });
@@ -196,5 +207,28 @@ public class SelectCountryActivity extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    // VPN Function
+    private void startVPN(Context context) {
+        Intent intent = VpnService.prepare(context);
+        if (intent != null) {
+            startActivityForResult(intent, REQUEST_VPN_PERMISSION);
+        } else {
+            onActivityResult(REQUEST_VPN_PERMISSION, RESULT_OK, null);
+        }
+        Intent vpnIntent = new Intent(this, TProxyService.class);
+        startService(vpnIntent.setAction(TProxyService.ACTION_CONNECT));
+        Toast.makeText(context, "Connected to VPN", Toast.LENGTH_SHORT).show();
+    }
+
+    private void stopVPN() {
+        Intent vpnIntent = new Intent(this, TProxyService.class);
+        startService(vpnIntent.setAction(TProxyService.ACTION_DISCONNECT));
+    }
+
+    private String parseNodeAPIURL(String ip, int port) {
+        String parsedIp = ip.startsWith("http://") || ip.startsWith("https://") ? ip : "http://" + ip;
+        return parsedIp + ":" + (port + 1);
     }
 }
