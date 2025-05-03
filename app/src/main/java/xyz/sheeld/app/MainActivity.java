@@ -62,13 +62,31 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         linearLayout.setOrientation(LinearLayout.VERTICAL);
         linearLayout.setGravity(Gravity.TOP);
 
+        FrameLayout topNavigationContainer = new FrameLayout(context);
+        linearLayout.addView(topNavigationContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, 0, 32));
+
         TextView title = new TextView(context);
-        linearLayout.addView(title, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, 0, 32));
+        topNavigationContainer.addView(title, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER));
         title.setText("Sheeld");
         title.setTextColor(getResources().getColor(R.color.primary));
         title.setTypeface(AndroidUtilities.getMediumTypeface(context));
         title.setTextSize(32);
         title.setGravity(Gravity.CENTER);
+
+        LinearLayout settingsIconContainer = new LinearLayout(context);
+        topNavigationContainer.addView(settingsIconContainer, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, 0, 12, 0, 0));
+        settingsIconContainer.setPadding(4, 4, 4, 4);
+        settingsIconContainer.setOnClickListener(view -> {
+            Intent intent = new Intent(MainActivity.this, SelectCountryActivity.class);
+            startActivity(intent);
+        });
+        GradientDrawable settingsGradient = new GradientDrawable();
+        settingsGradient.setCornerRadius(12);
+        settingsGradient.setStroke(2, getResources().getColor(R.color.border));
+        settingsIconContainer.setBackground(settingsGradient);
+        ImageView settingsIcon = new ImageView(context);
+        settingsIconContainer.addView(settingsIcon, LayoutHelper.createLinear(50, 50));
+        settingsIcon.setImageResource(R.drawable.adjustments);
 
         LinearLayout connectedStatusButton = new LinearLayout(context);
         linearLayout.addView(connectedStatusButton, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 0, 0, 0, 12));
@@ -96,7 +114,6 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         timer.setTypeface(AndroidUtilities.getSemiBoldTypeface(context));
         timer.setTextColor(Color.BLACK);
         timer.setTextSize(40);
-
 
         // Connect Button
         FrameLayout connectButtonParentLayout = new FrameLayout(this);
