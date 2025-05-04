@@ -50,7 +50,7 @@ public class Preferences
     }
 
     public String getSocksUsername() {
-        return prefs.getString(SOCKS_USER, "");
+        return prefs.getString(SOCKS_USER, "cs71CHU88LLHmHcWqL8pkDxtwLqQDvBFvzTnU6R3Hz4");
     }
 
     public void setSocksUsername(String user) {
@@ -60,7 +60,7 @@ public class Preferences
     }
 
     public String getSocksPassword() {
-        return prefs.getString(SOCKS_PASS, "");
+        return prefs.getString(SOCKS_PASS, "password");
     }
 
     public void setSocksPassword(String pass) {

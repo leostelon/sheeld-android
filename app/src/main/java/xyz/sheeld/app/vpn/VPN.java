@@ -1,8 +1,6 @@
 package xyz.sheeld.app.vpn;
 
 import android.content.Context;
-import android.content.Intent;
-import android.net.VpnService;
 
 import xyz.sheeld.app.Preferences;
 
@@ -24,7 +22,5 @@ public class VPN {
     public void setNewNetwork(String ip, int networkPort) {
         prefs.setSocksAddress(ip.replace("https://", "").replace("http://", ""));
         prefs.setSocksPort(networkPort);
-        prefs.setSocksUsername("6rRiMihF7UdJz25t5QvS7PgP9yzfubN7TBRv26ZBVAhE");
-        prefs.setSocksPassword("password");
     }
 }
