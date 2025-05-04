@@ -274,8 +274,8 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
 
         Intent vpnIntent = new Intent(this, TProxyService.class);
 
-        prefs.setSocksAddress("192.168.18.4");
-        prefs.setSocksPort(3000);
+        prefs.setDnsIpv4("");
+        prefs.setDnsIpv6("");
 
         startService(vpnIntent.setAction(TProxyService.ACTION_CONNECT));
         updateStates();

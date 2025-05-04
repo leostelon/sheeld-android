@@ -216,6 +216,10 @@ public class SelectCountryActivity extends AppCompatActivity {
         } else {
             onActivityResult(REQUEST_VPN_PERMISSION, RESULT_OK, null);
         }
+
+        prefs.setDnsIpv4("");
+        prefs.setDnsIpv6("");
+
         Intent vpnIntent = new Intent(this, TProxyService.class);
         startService(vpnIntent.setAction(TProxyService.ACTION_CONNECT));
         Toast.makeText(context, "Connected to India", Toast.LENGTH_SHORT).show();

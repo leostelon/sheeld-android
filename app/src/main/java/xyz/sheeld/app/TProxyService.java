@@ -65,7 +65,7 @@ public class TProxyService extends VpnService {
 
         /* VPN */
         String session = new String();
-        Builder builder = new Builder();
+        VpnService.Builder builder = new VpnService.Builder();
         builder.setBlocking(false);
         builder.setMtu(prefs.getTunnelMtu());
         if (prefs.getIpv4()) {
