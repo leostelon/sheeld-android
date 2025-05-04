@@ -219,7 +219,8 @@ public class SelectCountryActivity extends AppCompatActivity {
         }
         Intent vpnIntent = new Intent(this, TProxyService.class);
         startService(vpnIntent.setAction(TProxyService.ACTION_CONNECT));
-        Toast.makeText(context, "Connected to VPN", Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, "Connected to India", Toast.LENGTH_SHORT).show();
+        finish();
     }
 
     private void stopVPN() {

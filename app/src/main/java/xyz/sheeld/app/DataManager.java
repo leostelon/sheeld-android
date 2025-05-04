@@ -25,7 +25,6 @@ public class DataManager {
 
     public void setData(long[] newData) {
         this.data = newData;
-        Log.d("length", listeners.size()+"");
         notifyListeners();
     }
 

@@ -27,6 +27,8 @@ import androidx.core.view.ViewCompat;
 public class MainActivity extends AppCompatActivity implements DataUpdateListener {
     private TextView statusUploadSpeed;
     private TextView statusDownloadSpeed;
+    private TextView startButtonTitle;
+    private ImageView connectedStatusIcon;
     private static final int REQUEST_VPN_PERMISSION = 0x0F;
     private Preferences prefs;
     private static long[] oldStats = new long[]{0L, 0L, 0L, 0L};
@@ -97,12 +99,12 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         connectedStatusBackground.setStroke(2, getResources().getColor(R.color.border));
         connectedStatusButton.setBackground(connectedStatusBackground);
 
-        ImageView connectedStatusCheckIcon = new ImageView(context);
-        connectedStatusButton.addView(connectedStatusCheckIcon, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, 0, 0, 6, 0));
-        connectedStatusCheckIcon.setImageResource(R.drawable.check);
+        connectedStatusIcon = new ImageView(context);
+        connectedStatusButton.addView(connectedStatusIcon, LayoutHelper.createLinear(40, 40, 0, 0, 6, 0));
+        connectedStatusIcon.setImageResource(R.drawable.connected_icon);
 
-        TextView startButtonTitle = new TextView(context);
-        connectedStatusButton.addView(startButtonTitle, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT));
+        startButtonTitle = new TextView(context);
+        connectedStatusButton.addView(startButtonTitle, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT));
         startButtonTitle.setGravity(Gravity.CENTER);
         startButtonTitle.setText("Connected");
         startButtonTitle.setTextColor(Color.BLACK);
@@ -288,6 +290,10 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
     private void updateStates() {
         boolean isEnable = prefs.getEnable();
         toggleWaveAnimation(!isEnable);
+        String connectedStatusTitle = isEnable ? "Connected" : "Not Connected";
+        startButtonTitle.setText(connectedStatusTitle);
+        int connectStatusIcon = isEnable ? R.drawable.connected_icon : R.drawable.not_connected_icon;
+        connectedStatusIcon.setImageResource(connectStatusIcon);
     }
 
     @Override
@@ -299,6 +305,7 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
     protected void onResume() {
         super.onResume();
         DataManager.getInstance().addListener(this);
+        updateStates();
     }
 
     @Override
@@ -313,15 +320,9 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         String uploadSpeed = formatBytes(stats[1] - oldStats[1]);
         Log.d("MainActivitys", downloadSpeed);
         oldStats = stats;
-//        new Handler(Looper.getMainLooper()).post(() -> {
-//            statusDownloadSpeed.setText(downloadSpeed);
-//            statusUploadSpeed.setText(uploadSpeed);
-//        });
 
         if (!isFinishing() && !isDestroyed()) {
         runOnUiThread(() -> {
-            Log.d("MainActivitysss", String.valueOf(statusDownloadSpeed==null));
-
             statusDownloadSpeed.setText(downloadSpeed);
             statusUploadSpeed.setText(uploadSpeed);
         });
