@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import xyz.sheeld.app.Util;
 import xyz.sheeld.app.api.RetrofitClient;
 import xyz.sheeld.app.api.dtos.GetNearestNodeResponseDTO;
 import xyz.sheeld.app.api.interfaces.DataCallbackInterface;
@@ -51,7 +52,8 @@ public class NetworkController {
         );
     }
 
-    public void getNearestNode(String nodeApiUrl, final DataCallbackInterface<Node> callback) {
+    public void getNearestNode(String ip, int networkPort, final DataCallbackInterface<Node> callback) {
+        String nodeApiUrl = Util.parseNodeAPIURL(ip, networkPort);
         NetworkRoute dynamicApiService = RetrofitClient.getDynamicClient(nodeApiUrl).create(NetworkRoute.class);
         Call<GetNearestNodeResponseDTO> call = dynamicApiService.getNearestNode();
 
@@ -59,17 +61,24 @@ public class NetworkController {
                 new Callback<GetNearestNodeResponseDTO>() {
                     @Override
                     public void onResponse(@NonNull Call<GetNearestNodeResponseDTO> call, @NonNull Response<GetNearestNodeResponseDTO> response) {
+                        Log.d("getnetwork", response.isSuccessful()+":"+response.code());
+                        Node node = new Node();
                         if (response.isSuccessful() && response.code() == 200) {
                             if (response.body() != null) {
                                 GetNearestNodeResponseDTO data = response.body();
-                                Node node = new Node();
                                 node.ip = data.ip;
                                 node.networkPort = data.networkPort;
                                 node.apiPort = data.apiPort;
                                 node.joinedAt = data.joinedAt;
                                 callback.onSuccess(node);
                             }
-                        }
+                        } else if (response.code() == 500) {
+                            node.ip = ip;
+                            node.networkPort = networkPort;
+                            node.apiPort = networkPort + 1;
+                            node.joinedAt = 1;
+                            callback.onSuccess(node);
+                        } else throw new Error("Something has gone wrong");
                     }
 
                     @Override

@@ -126,8 +126,7 @@ public class SelectCountryActivity extends AppCompatActivity {
         Dialog dialog = new Dialog(context);
         ProgressBar progressBar = new ProgressBar(context);
 
-        String nodeApiUrl = parseNodeAPIURL(ip, networkPort);
-        networkController.getNearestNode(nodeApiUrl, new DataCallbackInterface<Node>() {
+       networkController.getNearestNode(ip, networkPort, new DataCallbackInterface<Node>() {
             @Override
             public void onSuccess(Node node) {
                 dialog.dismiss();
@@ -150,7 +149,7 @@ public class SelectCountryActivity extends AppCompatActivity {
         Dialog dialog = new Dialog(context);
         ProgressBar progressBar = new ProgressBar(context);
 
-        String nodeApiUrl = parseNodeAPIURL(nearestNodeIp, nearestNodeNetworkPort);
+        String nodeApiUrl = Util.parseNodeAPIURL(nearestNodeIp, nearestNodeNetworkPort);
         clientController.joinClient(nodeApiUrl, targetNodeIp, targetNodeNetworkPort, new DataCallbackInterface<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
@@ -226,10 +225,5 @@ public class SelectCountryActivity extends AppCompatActivity {
     private void stopVPN() {
         Intent vpnIntent = new Intent(this, TProxyService.class);
         startService(vpnIntent.setAction(TProxyService.ACTION_DISCONNECT));
-    }
-
-    private String parseNodeAPIURL(String ip, int port) {
-        String parsedIp = ip.startsWith("http://") || ip.startsWith("https://") ? ip : "http://" + ip;
-        return parsedIp + ":" + (port + 1);
     }
 }
