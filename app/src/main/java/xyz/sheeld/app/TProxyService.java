@@ -11,7 +11,6 @@ import android.content.pm.ServiceInfo;
 import android.net.VpnService;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
-import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
 

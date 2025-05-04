@@ -61,7 +61,6 @@ public class NetworkController {
                 new Callback<GetNearestNodeResponseDTO>() {
                     @Override
                     public void onResponse(@NonNull Call<GetNearestNodeResponseDTO> call, @NonNull Response<GetNearestNodeResponseDTO> response) {
-                        Log.d("getnetwork", response.isSuccessful()+":"+response.code());
                         Node node = new Node();
                         if (response.isSuccessful() && response.code() == 200) {
                             if (response.body() != null) {

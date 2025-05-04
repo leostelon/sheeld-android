@@ -14,13 +14,13 @@ import xyz.sheeld.app.api.interfaces.DataCallbackInterface;
 import xyz.sheeld.app.api.routes.ClientRoute;
 
 public class ClientController {
-
-    public void joinClient(String baseurl, String ip, int networkPort, final DataCallbackInterface<Boolean> callback) {
+    public void joinClient(String baseurl, String ip, String sol_address, int networkPort, final DataCallbackInterface<Boolean> callback) {
         ClientRoute apiService = RetrofitClient.getDynamicClient(baseurl).create(ClientRoute.class);
 
         PostClientJoinRequestDTO body = new PostClientJoinRequestDTO();
         body.ip = ip;
         body.networkPort = networkPort;
+        body.sol_address = sol_address;
 
         Call<PostClientJoinResponseDTO> call = apiService.joinClient(body);
         call.enqueue(
@@ -30,7 +30,6 @@ public class ClientController {
                     if (response.isSuccessful() && response.code() == 200) {
                         if (response.body() != null) {
                             PostClientJoinResponseDTO data = response.body();
-                            Log.d("joinClient", data.message);
                             callback.onSuccess(true);
                         }
                     }
@@ -38,7 +37,7 @@ public class ClientController {
 
                 @Override
                 public void onFailure(@NonNull Call<PostClientJoinResponseDTO> call, @NonNull Throwable throwable) {
-                    Log.e("getsNodes", throwable.toString());
+                    Log.d("joinClient", throwable.toString());
                     callback.onFailure(throwable);
                 }
             }

@@ -150,7 +150,8 @@ public class SelectCountryActivity extends AppCompatActivity {
         ProgressBar progressBar = new ProgressBar(context);
 
         String nodeApiUrl = Util.parseNodeAPIURL(nearestNodeIp, nearestNodeNetworkPort);
-        clientController.joinClient(nodeApiUrl, targetNodeIp, targetNodeNetworkPort, new DataCallbackInterface<Boolean>() {
+        String sol_address = prefs.getSocksUsername();
+        clientController.joinClient(nodeApiUrl, targetNodeIp, sol_address, targetNodeNetworkPort, new DataCallbackInterface<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
                 dialog.dismiss();
