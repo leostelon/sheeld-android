@@ -208,7 +208,7 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         latency = new TextView(context);
         statusCountryStatsParent.addView(latency, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT));
         latency.setGravity(Gravity.CENTER);
-        latency.setText("12ms");
+        latency.setText("0ms");
         latency.setTextColor(Color.GRAY);
 
         // Section Divider
