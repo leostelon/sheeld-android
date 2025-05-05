@@ -3,15 +3,22 @@ package xyz.sheeld.app;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
+
+import com.google.gson.Gson;
 
 import java.util.HashSet;
 import java.util.Set;
 
+import xyz.sheeld.app.api.types.Node;
+
 public class Preferences
 {
+    static Gson gson =  new Gson();
     public static final String PREFS_NAME = "SocksPrefs";
     public static final String SOCKS_ADDR = "SocksAddr";
     public static final String SOCKS_PORT = "SocksPort";
+    public static final String NODE = "Node";
     public static final String SOCKS_USER = "SocksUser";
     public static final String SOCKS_PASS = "SocksPass";
     public static final String DNS_IPV4 = "DnsIpv4";
@@ -27,6 +34,18 @@ public class Preferences
 
     public Preferences(Context context) {
         prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_MULTI_PROCESS);
+    }
+
+    public void setNode(Node node) {
+        SharedPreferences.Editor editor = prefs.edit();
+        String nodeString = gson.toJson(node);
+        editor.putString(NODE, nodeString);
+        editor.commit();
+    }
+
+    public Node getNode() {
+        String nodeString = prefs.getString(NODE, "");
+        return gson.fromJson(nodeString, Node.class);
     }
 
     public String getSocksAddress() {

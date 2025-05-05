@@ -3,14 +3,13 @@ package xyz.sheeld.app;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.net.VpnService;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -18,20 +17,35 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.ViewCompat;
 
+import java.util.List;
+
+import xyz.sheeld.app.api.controllers.ClientController;
+import xyz.sheeld.app.api.controllers.NetworkController;
+import xyz.sheeld.app.api.interfaces.DataCallbackInterface;
+import xyz.sheeld.app.api.types.Node;
+import xyz.sheeld.app.vpn.VPN;
+
 public class MainActivity extends AppCompatActivity implements DataUpdateListener {
     private TextView statusUploadSpeed;
     private TextView statusDownloadSpeed;
     private TextView startButtonTitle;
+    private TextView countryStatusIP;
     private ImageView connectedStatusIcon;
+    private TextView countryStatusTitle;
     private static final int REQUEST_VPN_PERMISSION = 0x0F;
     private Preferences prefs;
     private static long[] oldStats = new long[]{0L, 0L, 0L, 0L};
+    private final NetworkController networkController = new NetworkController();
+    private final ClientController clientController = new ClientController();
+    private Node node;
 
     // Animation Components
     private View connectButtonWaveView;
@@ -67,13 +81,14 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         FrameLayout topNavigationContainer = new FrameLayout(context);
         linearLayout.addView(topNavigationContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, 0, 32));
 
-        TextView title = new TextView(context);
-        topNavigationContainer.addView(title, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER));
-        title.setText("Sheeld");
-        title.setTextColor(getResources().getColor(R.color.primary));
-        title.setTypeface(AndroidUtilities.getMediumTypeface(context));
-        title.setTextSize(32);
-        title.setGravity(Gravity.CENTER);
+        LinearLayout titleContainer = new LinearLayout(context);
+        topNavigationContainer.addView(titleContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER));
+        titleContainer.setOrientation(LinearLayout.HORIZONTAL);
+        titleContainer.setGravity(Gravity.CENTER);
+
+        ImageView sheeldIcon = new ImageView(context);
+        titleContainer.addView(sheeldIcon, LayoutHelper.createLinear(200, 150));
+        sheeldIcon.setImageResource(R.drawable.logo);
 
         LinearLayout settingsIconContainer = new LinearLayout(context);
         topNavigationContainer.addView(settingsIconContainer, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, 0, 12, 0, 0));
@@ -109,6 +124,27 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         startButtonTitle.setText("Connected");
         startButtonTitle.setTextColor(Color.BLACK);
 
+        // Country Status
+        LinearLayout countryStatusButton = new LinearLayout(context);
+        linearLayout.addView(countryStatusButton, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 0, 0, 0, 12));
+        countryStatusButton.setPadding(24,12, 24, 12);
+
+        GradientDrawable countryStatusBackground = new GradientDrawable();
+        countryStatusBackground.setCornerRadius(24);
+        countryStatusBackground.setStroke(2, getResources().getColor(R.color.border));
+        countryStatusButton.setBackground(countryStatusBackground);
+
+        countryStatusTitle = new TextView(context);
+        countryStatusButton.addView(countryStatusTitle, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, 0, 0, 12, 0));
+        countryStatusTitle.setGravity(Gravity.CENTER);
+        countryStatusTitle.setTextColor(Color.BLACK);
+
+        countryStatusIP = new TextView(context);
+        countryStatusButton.addView(countryStatusIP, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT));
+        countryStatusIP.setGravity(Gravity.CENTER);
+        countryStatusIP.setText("0.0.0.0");
+        countryStatusIP.setTextColor(Color.GRAY);
+
         // Timer
         TextView timer = new TextView(context);
         linearLayout.addView(timer, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 0, 0, 0, 16));
@@ -138,7 +174,9 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
             if (isEnable) {
                 stopVPN();
             } else {
-                startVPN(context);
+                if (node != null) {
+                    getNearestNode(node.ip, node.networkPort);
+                }
             }
         });
 
@@ -218,14 +256,15 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         statusUploadSpeedTitle.setTypeface(AndroidUtilities.getRegularTypeface(context));
 
         setContentView(linearLayout);
+        getCurrentNode();
         updateStates();
     }
 
     private void toggleWaveAnimation(boolean isEnable) {
         if (isEnable) {
-            stopWaveAnimation();
-        } else {
             startWaveAnimation();
+        } else {
+            stopWaveAnimation();
         }
     }
 
@@ -289,7 +328,7 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
 
     private void updateStates() {
         boolean isEnable = prefs.getEnable();
-        toggleWaveAnimation(!isEnable);
+        toggleWaveAnimation(isEnable);
         String connectedStatusTitle = isEnable ? "Connected" : "Not Connected";
         startButtonTitle.setText(connectedStatusTitle);
         int connectStatusIcon = isEnable ? R.drawable.connected_icon : R.drawable.not_connected_icon;
@@ -342,4 +381,101 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
             return String.format("%.2f MB/s", resultMb);
         }
     }
+
+    private void getCurrentNode() {
+        node = prefs.getNode();
+        if (node == null) {
+            getBootNodes();
+        } else {
+            updateCurrentNodeUI(node);
+        }
+    }
+
+    private void getBootNodes() {
+        Context context = MainActivity.this;
+        Dialog dialog = new Dialog(context);
+        ProgressBar progressBar = new ProgressBar(context);
+
+        networkController.getNodes(new DataCallbackInterface<List<Node>>() {
+            @Override
+            public void onSuccess(List<Node> nodes) {
+                dialog.dismiss();
+                if(!nodes.isEmpty()) {
+                    node = nodes.get(0);
+                    prefs.setNode(node);
+                    updateCurrentNodeUI(node);
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                dialog.dismiss();
+                Log.d("getNetworks", t.toString());
+            }
+        });
+        dialog.setContentView(progressBar);
+        dialog.show();
+    }
+
+    private void updateCurrentNodeUI(Node node) {
+        countryStatusTitle.setText(node.location);
+        countryStatusIP.setText(node.ip);
+    }
+
+    private void getNearestNode(String ip, int networkPort) {
+        Context context = MainActivity.this;
+        Dialog dialog = new Dialog(context);
+        ProgressBar progressBar = new ProgressBar(context);
+        Log.d("getNetworks",ip+networkPort);
+
+        networkController.getNearestNode(ip, networkPort, new DataCallbackInterface<Node>() {
+            @Override
+            public void onSuccess(Node node) {
+                dialog.dismiss();
+                Toast.makeText(context, "fetched", Toast.LENGTH_SHORT).show();
+                connectToNearestNode(node.ip, node.networkPort, ip, networkPort);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                dialog.dismiss();
+                Log.d("getNetworks", t.toString());
+            }
+        });
+        dialog.setContentView(progressBar);
+        dialog.show();
+    }
+
+    private void connectToNearestNode(String nearestNodeIp, int nearestNodeNetworkPort, String targetNodeIp, int targetNodeNetworkPort) {
+        Context context = MainActivity.this;
+        Dialog dialog = new Dialog(context);
+        ProgressBar progressBar = new ProgressBar(context);
+
+        String nodeApiUrl = Util.parseNodeAPIURL(nearestNodeIp, nearestNodeNetworkPort+1);
+        String sol_address = prefs.getSocksUsername();
+        clientController.joinClient(nodeApiUrl, targetNodeIp, targetNodeNetworkPort, sol_address, new DataCallbackInterface<Boolean>() {
+            @Override
+            public void onSuccess(Boolean result) {
+                dialog.dismiss();
+                if (result) {
+                    // connect to vpn here
+                    // Set preference to nearest network
+                    VPN.getInstance(context).setNewNetwork(nearestNodeIp, nearestNodeNetworkPort);
+                    // First stop current vpn
+                    stopVPN();
+                    // Then start the vpn
+                    startVPN(context);
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                dialog.dismiss();
+                Log.d("connectToNearestNode", t.toString());
+            }
+        });
+        dialog.setContentView(progressBar);
+        dialog.show();
+    }
+
 }

@@ -36,6 +36,7 @@ public class NetworkController {
                                     node.networkPort = n.networkPort;
                                     node.apiPort = n.apiPort;
                                     node.joinedAt = n.joinedAt;
+                                    node.location = n.location;
                                     return node;
                                 }).collect(Collectors.toList());
                                 callback.onSuccess(nodeList);
@@ -53,7 +54,7 @@ public class NetworkController {
     }
 
     public void getNearestNode(String ip, int networkPort, final DataCallbackInterface<Node> callback) {
-        String nodeApiUrl = Util.parseNodeAPIURL(ip, networkPort);
+        String nodeApiUrl = Util.parseNodeAPIURL(ip, networkPort + 1);
         NetworkRoute dynamicApiService = RetrofitClient.getDynamicClient(nodeApiUrl).create(NetworkRoute.class);
         Call<GetNearestNodeResponseDTO> call = dynamicApiService.getNearestNode();
 

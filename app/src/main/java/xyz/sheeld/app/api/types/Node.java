@@ -5,4 +5,5 @@ public class Node {
     public int networkPort;
     public int apiPort;
     public long joinedAt;
+    public String location;
 }

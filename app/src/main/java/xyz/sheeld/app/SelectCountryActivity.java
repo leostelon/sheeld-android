@@ -115,6 +115,7 @@ public class SelectCountryActivity extends AppCompatActivity {
         connect.setTextColor(getResources().getColor(R.color.primary));
         connect.setTypeface(AndroidUtilities.getSemiBoldTypeface(context));
         connect.setOnClickListener(view -> {
+            prefs.setNode(node);
             getNearestNode(node.ip, node.networkPort);
         });
 
@@ -149,9 +150,9 @@ public class SelectCountryActivity extends AppCompatActivity {
         Dialog dialog = new Dialog(context);
         ProgressBar progressBar = new ProgressBar(context);
 
-        String nodeApiUrl = Util.parseNodeAPIURL(nearestNodeIp, nearestNodeNetworkPort);
+        String nodeApiUrl = Util.parseNodeAPIURL(nearestNodeIp, nearestNodeNetworkPort+1);
         String sol_address = prefs.getSocksUsername();
-        clientController.joinClient(nodeApiUrl, targetNodeIp, sol_address, targetNodeNetworkPort, new DataCallbackInterface<Boolean>() {
+        clientController.joinClient(nodeApiUrl, targetNodeIp, targetNodeNetworkPort, sol_address, new DataCallbackInterface<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
                 dialog.dismiss();

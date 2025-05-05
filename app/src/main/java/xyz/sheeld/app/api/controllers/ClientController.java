@@ -14,7 +14,7 @@ import xyz.sheeld.app.api.interfaces.DataCallbackInterface;
 import xyz.sheeld.app.api.routes.ClientRoute;
 
 public class ClientController {
-    public void joinClient(String baseurl, String ip, String sol_address, int networkPort, final DataCallbackInterface<Boolean> callback) {
+    public void joinClient(String baseurl, String ip, int networkPort, String sol_address, final DataCallbackInterface<Boolean> callback) {
         ClientRoute apiService = RetrofitClient.getDynamicClient(baseurl).create(ClientRoute.class);
 
         PostClientJoinRequestDTO body = new PostClientJoinRequestDTO();
