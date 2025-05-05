@@ -70,6 +70,7 @@ public class NetworkController {
                                 node.networkPort = data.networkPort;
                                 node.apiPort = data.apiPort;
                                 node.joinedAt = data.joinedAt;
+                                node.location = data.location;
                                 callback.onSuccess(node);
                             }
                         } else if (response.code() == 500) {

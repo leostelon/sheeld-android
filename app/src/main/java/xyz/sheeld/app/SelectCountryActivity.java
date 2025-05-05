@@ -164,6 +164,7 @@ public class SelectCountryActivity extends AppCompatActivity {
                     stopVPN();
                     // Then start the vpn
                     startVPN(context);
+                    SocketClient.getInstance().connectToServer(Util.removeIpSchemes(nearestNodeIp), nearestNodeNetworkPort + 1);
                 }
             }
 

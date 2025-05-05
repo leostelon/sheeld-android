@@ -456,27 +456,25 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
     private void updateCurrentNodeUI(Node node) {
         Log.d("Country", String.valueOf(node.location));
         statusCountryIp.setText(Util.removeIpSchemes(node.ip));
-        statusDownloadCountry.setText("India");
+        statusDownloadCountry.setText(node.location);
     }
 
     private void getNearestNode(String ip, int networkPort) {
         Context context = MainActivity.this;
         Dialog dialog = new Dialog(context);
         ProgressBar progressBar = new ProgressBar(context);
-        Log.d("getNetworks",ip+networkPort);
 
         networkController.getNearestNode(ip, networkPort, new DataCallbackInterface<Node>() {
             @Override
             public void onSuccess(Node node) {
                 dialog.dismiss();
-                Toast.makeText(context, "fetched", Toast.LENGTH_SHORT).show();
                 connectToNearestNode(node.ip, node.networkPort, ip, networkPort);
             }
 
             @Override
             public void onFailure(Throwable t) {
                 dialog.dismiss();
-                Log.d("getNetworks", t.toString());
+                Log.d("getNearestNode", t.toString());
             }
         });
         dialog.setContentView(progressBar);
