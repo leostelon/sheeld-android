@@ -369,17 +369,25 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
     }
 
     @Override
-    public void onDataUpdated(long[] stats, long time) {
+    public void onDataUpdated(long[] stats) {
         String downloadSpeed = formatBytes(stats[3] - oldStats[3]);
         String uploadSpeed = formatBytes(stats[1] - oldStats[1]);
         oldStats = stats;
 
         if (!isFinishing() && !isDestroyed()) {
         runOnUiThread(() -> {
-            timer.setText(convertSecondsToTimeString(time));
             statusDownloadSpeed.setText(downloadSpeed);
             statusUploadSpeed.setText(uploadSpeed);
         });
+        }
+    }
+
+    @Override
+    public void onTimeUpdated(long time) {
+        if (!isFinishing() && !isDestroyed()) {
+            runOnUiThread(() -> {
+                timer.setText(convertSecondsToTimeString(time));
+            });
         }
     }
 
@@ -394,6 +402,9 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
     }
 
     public static String formatBytes(long bytes) {
+        if (bytes < 0) {
+            bytes = 0;
+        }
         long kb = 1024;
         long mb = kb * 1024;
         if (bytes < kb) {

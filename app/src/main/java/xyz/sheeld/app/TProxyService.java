@@ -169,7 +169,8 @@ public class TProxyService extends VpnService {
         }
         tunFd = null;
         timeConsumed = 0;
-        DataManager.getInstance().setData(new long[]{0L, 0L, 0L, 0L}, timeConsumed);
+        DataManager.getInstance().setData(new long[]{0L, 0L, 0L, 0L});
+        DataManager.getInstance().setTime(0);
         timer.cancel();
         SocketClient.getInstance().disconnect();
 //        System.exit(0);
@@ -209,7 +210,8 @@ public class TProxyService extends VpnService {
             public void run() {
                 long[] stats = TProxyGetStats();
                 timeConsumed += 1;
-                DataManager.getInstance().setData(stats, timeConsumed);
+                DataManager.getInstance().setData(stats);
+                DataManager.getInstance().setTime(timeConsumed);
             }
         }, 0, 1000);
     }

@@ -9,6 +9,7 @@ public class DataManager {
     private long[] data = new long[4];
     private long timeConsumed = 0;
     private int latency = 0;
+    private enum NOTIFY_TYPE {DATA, LATENCY, TIME,}
 
     private DataManager() {}
 
@@ -23,15 +24,19 @@ public class DataManager {
         return instance;
     }
 
-    public void setData(long[] newData, long newTime) {
+    public void setData(long[] newData) {
         this.data = newData;
-        this.timeConsumed = newTime;
-        notifyListeners();
+        notifyListeners(NOTIFY_TYPE.DATA);
     }
 
     public void setLatency(int newLatency) {
         this.latency = newLatency;
-        notifyListeners();
+        notifyListeners(NOTIFY_TYPE.LATENCY);
+    }
+
+    public void setTime(long t) {
+        this.timeConsumed = t;
+        notifyListeners(NOTIFY_TYPE.TIME);
     }
 
     public void addListener(DataUpdateListener listener) {
@@ -42,10 +47,13 @@ public class DataManager {
         listeners.remove(listener);
     }
 
-    private void notifyListeners() {
+    private void notifyListeners(NOTIFY_TYPE type) {
         for (DataUpdateListener listener : listeners) {
-            listener.onDataUpdated(data, timeConsumed);
-            listener.onLatencyUpdated(latency);
+            switch (type) {
+                case DATA: listener.onDataUpdated(data);
+                case TIME: listener.onTimeUpdated(timeConsumed);
+                case LATENCY: listener.onLatencyUpdated(latency);
+            }
         }
     }
 }
