@@ -29,6 +29,7 @@ public class Preferences
     public static final String UDP_IN_TCP = "UdpInTcp";
     public static final String APPS = "Apps";
     public static final String ENABLE = "Enable";
+    public static final String SOL_PRIVATE_KEY = "SolanaPrivateKey";
 
     private SharedPreferences prefs;
 
@@ -69,7 +70,7 @@ public class Preferences
     }
 
     public String getSocksUsername() {
-        return prefs.getString(SOCKS_USER, "cs71CHU88LLHmHcWqL8pkDxtwLqQDvBFvzTnU6R3Hz4");
+        return prefs.getString(SOCKS_USER, "BqZTjfFHAgkzoqkcGHNcWTU1wi1dP2GxT5iCnbhJNSKK");
     }
 
     public void setSocksUsername(String user) {
@@ -190,5 +191,15 @@ public class Preferences
 
     public int getTaskStackSize() {
         return 81920;
+    }
+
+    public void setSolanaPrivateKey(String pk) {
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString(SOL_PRIVATE_KEY, pk);
+        editor.commit();
+    }
+
+    public String getSolanaPrivateKey() {
+        return prefs.getString(SOL_PRIVATE_KEY, "53ESETwLEZbKFYtkC3G7qFGzFaTaTWXApU18EWXecVszdMbSDcbfyjxXYZ1fM45gEMMr9zJviN25GVFZV9htrshK");
     }
 }

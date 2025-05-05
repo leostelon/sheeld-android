@@ -490,8 +490,12 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         ProgressBar progressBar = new ProgressBar(context);
 
         String nodeApiUrl = Util.parseNodeAPIURL(nearestNodeIp, nearestNodeNetworkPort + 1);
+
         String sol_address = prefs.getSocksUsername();
-        clientController.joinClient(nodeApiUrl, targetNodeIp, targetNodeNetworkPort, sol_address, new DataCallbackInterface<Boolean>() {
+        String pk = prefs.getSolanaPrivateKey();
+        String signature = CryptoService.signMessage(pk);
+
+        clientController.joinClient(nodeApiUrl, targetNodeIp, targetNodeNetworkPort, sol_address, signature, new DataCallbackInterface<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
                 dialog.dismiss();
@@ -511,6 +515,7 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
             public void onFailure(Throwable t) {
                 dialog.dismiss();
                 Log.d("connectToNearestNode", t.toString());
+                Toast.makeText(context, t.toString(), Toast.LENGTH_LONG).show();
             }
         });
         dialog.setContentView(progressBar);
