@@ -25,6 +25,7 @@ public class TProxyService extends VpnService {
     private static native void TProxyStopService();
     private static native long[] TProxyGetStats();
     private Timer timer;
+    public long timeConsumed = 0;
 
     public static final String ACTION_CONNECT = "xyz.sheeld.app.CONNECT";
     public static final String ACTION_DISCONNECT = "xyz.sheeld.app.DISCONNECT";
@@ -167,6 +168,8 @@ public class TProxyService extends VpnService {
         } catch (IOException e) {
         }
         tunFd = null;
+        timeConsumed = 0;
+        DataManager.getInstance().setData(new long[]{0L, 0L, 0L, 0L}, timeConsumed);
         timer.cancel();
 //        System.exit(0);
     }
@@ -198,12 +201,14 @@ public class TProxyService extends VpnService {
     }
 
     private void logStats() {
+        timeConsumed = 0;
         timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
                 long[] stats = TProxyGetStats();
-                DataManager.getInstance().setData(stats);
+                timeConsumed += 1;
+                DataManager.getInstance().setData(stats, timeConsumed);
             }
         }, 0, 1000);
     }

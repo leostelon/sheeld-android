@@ -40,9 +40,11 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
     private TextView countryStatusIP;
     private ImageView connectedStatusIcon;
     private TextView countryStatusTitle;
+    private TextView timer;
     private static final int REQUEST_VPN_PERMISSION = 0x0F;
     private Preferences prefs;
     private static long[] oldStats = new long[]{0L, 0L, 0L, 0L};
+    private static long timeConsumed = 0;
     private final NetworkController networkController = new NetworkController();
     private final ClientController clientController = new ClientController();
     private Node node;
@@ -146,9 +148,9 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         countryStatusIP.setTextColor(Color.GRAY);
 
         // Timer
-        TextView timer = new TextView(context);
+        timer = new TextView(context);
         linearLayout.addView(timer, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 0, 0, 0, 16));
-        timer.setText("00:04:12");
+        timer.setText("00:00:00");
         timer.setTypeface(AndroidUtilities.getSemiBoldTypeface(context));
         timer.setTextColor(Color.BLACK);
         timer.setTextSize(40);
@@ -354,14 +356,15 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
     }
 
     @Override
-    public void onDataUpdated(long[] stats) {
+    public void onDataUpdated(long[] stats, long time) {
         String downloadSpeed = formatBytes(stats[3] - oldStats[3]);
         String uploadSpeed = formatBytes(stats[1] - oldStats[1]);
-        Log.d("MainActivitys", downloadSpeed);
         oldStats = stats;
+        timeConsumed = time;
 
         if (!isFinishing() && !isDestroyed()) {
         runOnUiThread(() -> {
+            timer.setText(convertSecondsToTimeString(time));
             statusDownloadSpeed.setText(downloadSpeed);
             statusUploadSpeed.setText(uploadSpeed);
         });
@@ -478,4 +481,11 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         dialog.show();
     }
 
+    private static String convertSecondsToTimeString(long totalSeconds) {
+        long hours = totalSeconds / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        long seconds = totalSeconds % 60;
+
+        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
+    }
 }

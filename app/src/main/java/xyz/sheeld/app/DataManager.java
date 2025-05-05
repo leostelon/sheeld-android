@@ -9,6 +9,7 @@ public class DataManager {
     private static DataManager instance;
     private final Set<DataUpdateListener> listeners = new HashSet<>();
     private long[] data = new long[4];
+    private long timeConsumed = 0;
 
     private DataManager() {}
 
@@ -23,8 +24,9 @@ public class DataManager {
         return instance;
     }
 
-    public void setData(long[] newData) {
+    public void setData(long[] newData, long newTime) {
         this.data = newData;
+        this.timeConsumed = newTime;
         notifyListeners();
     }
 
@@ -38,7 +40,7 @@ public class DataManager {
 
     private void notifyListeners() {
         for (DataUpdateListener listener : listeners) {
-            listener.onDataUpdated(data);
+            listener.onDataUpdated(data, timeConsumed);
         }
     }
 }
