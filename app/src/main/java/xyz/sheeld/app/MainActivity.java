@@ -93,19 +93,23 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         titleContainer.addView(sheeldIcon, LayoutHelper.createLinear(200, 150));
         sheeldIcon.setImageResource(R.drawable.logo);
 
+        LinearLayout settingsIconParentContainer = new LinearLayout(context);
+        topNavigationContainer.addView(settingsIconParentContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 30, 0, 0));
+        settingsIconParentContainer.setGravity(Gravity.END);
+
         LinearLayout settingsIconContainer = new LinearLayout(context);
-        topNavigationContainer.addView(settingsIconContainer, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, 0, 12, 0, 0));
-        settingsIconContainer.setPadding(4, 4, 4, 4);
+        settingsIconParentContainer.addView(settingsIconContainer, LayoutHelper.createLinear(60, 60, 0, 12, 0, 0));
         settingsIconContainer.setOnClickListener(view -> {
             Intent intent = new Intent(MainActivity.this, SelectCountryActivity.class);
             startActivity(intent);
         });
+        settingsIconContainer.setGravity(Gravity.CENTER);
         GradientDrawable settingsGradient = new GradientDrawable();
         settingsGradient.setCornerRadius(12);
         settingsGradient.setStroke(2, getResources().getColor(R.color.border));
         settingsIconContainer.setBackground(settingsGradient);
         ImageView settingsIcon = new ImageView(context);
-        settingsIconContainer.addView(settingsIcon, LayoutHelper.createLinear(50, 50));
+        settingsIconContainer.addView(settingsIcon, LayoutHelper.createLinear(30, 30));
         settingsIcon.setImageResource(R.drawable.adjustments);
 
         LinearLayout connectedStatusButton = new LinearLayout(context);
@@ -454,7 +458,6 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
     }
 
     private void updateCurrentNodeUI(Node node) {
-        Log.d("Country", String.valueOf(node.location));
         statusCountryIp.setText(Util.removeIpSchemes(node.ip));
         statusDownloadCountry.setText(node.location);
     }
