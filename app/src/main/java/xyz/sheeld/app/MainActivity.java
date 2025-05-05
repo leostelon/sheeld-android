@@ -25,6 +25,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.ViewCompat;
 
+import java.net.Socket;
 import java.util.List;
 
 import xyz.sheeld.app.api.controllers.ClientController;
@@ -37,17 +38,17 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
     private TextView statusUploadSpeed;
     private TextView statusDownloadSpeed;
     private TextView startButtonTitle;
-    private TextView countryStatusIP;
     private ImageView connectedStatusIcon;
-    private TextView countryStatusTitle;
     private TextView timer;
     private static final int REQUEST_VPN_PERMISSION = 0x0F;
     private Preferences prefs;
     private static long[] oldStats = new long[]{0L, 0L, 0L, 0L};
-    private static long timeConsumed = 0;
     private final NetworkController networkController = new NetworkController();
     private final ClientController clientController = new ClientController();
     private Node node;
+    private TextView statusCountryIp;
+    private TextView statusDownloadCountry;
+    private TextView latency;
 
     // Animation Components
     private View connectButtonWaveView;
@@ -126,27 +127,6 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         startButtonTitle.setText("Connected");
         startButtonTitle.setTextColor(Color.BLACK);
 
-        // Country Status
-        LinearLayout countryStatusButton = new LinearLayout(context);
-        linearLayout.addView(countryStatusButton, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 0, 0, 0, 12));
-        countryStatusButton.setPadding(24,12, 24, 12);
-
-        GradientDrawable countryStatusBackground = new GradientDrawable();
-        countryStatusBackground.setCornerRadius(24);
-        countryStatusBackground.setStroke(2, getResources().getColor(R.color.border));
-        countryStatusButton.setBackground(countryStatusBackground);
-
-        countryStatusTitle = new TextView(context);
-        countryStatusButton.addView(countryStatusTitle, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, 0, 0, 12, 0));
-        countryStatusTitle.setGravity(Gravity.CENTER);
-        countryStatusTitle.setTextColor(Color.BLACK);
-
-        countryStatusIP = new TextView(context);
-        countryStatusButton.addView(countryStatusIP, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT));
-        countryStatusIP.setGravity(Gravity.CENTER);
-        countryStatusIP.setText("0.0.0.0");
-        countryStatusIP.setTextColor(Color.GRAY);
-
         // Timer
         timer = new TextView(context);
         linearLayout.addView(timer, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 0, 0, 0, 16));
@@ -197,21 +177,54 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         // Status Containers
         LinearLayout statusContainer = new LinearLayout(context);
         linearLayout.addView(statusContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-        statusContainer.setOrientation(LinearLayout.HORIZONTAL);
-        statusContainer.setPadding(0, 24, 0, 24);
+        statusContainer.setOrientation(LinearLayout.VERTICAL);
+        statusContainer.setPadding(48, 24, 48, 24);
         GradientDrawable statusContainerBackground = new GradientDrawable();
         statusContainer.setBackground(statusContainerBackground);
         statusContainerBackground.setStroke(2, getResources().getColor(R.color.border));
         statusContainerBackground.setCornerRadius(24);
 
+        // Country Details Container
+        LinearLayout statusCountryStatsParent = new LinearLayout(context);
+        statusContainer.addView(statusCountryStatsParent, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER));
+
+        LinearLayout statusCountryStats = new LinearLayout(context);
+        statusCountryStatsParent.addView(statusCountryStats, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 1f, Gravity.CENTER));
+        statusCountryStats.setOrientation(LinearLayout.VERTICAL);
+
+        statusDownloadCountry = new TextView(context);
+        statusCountryStats.addView(statusDownloadCountry);
+        statusDownloadCountry.setTypeface(AndroidUtilities.getMediumTypeface(context));
+
+        statusCountryIp = new TextView(context);
+        statusCountryStats.addView(statusCountryIp);
+        statusCountryIp.setTypeface(AndroidUtilities.getRegularTypeface(context));
+
+        // Latency
+        latency = new TextView(context);
+        statusCountryStatsParent.addView(latency, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT));
+        latency.setGravity(Gravity.CENTER);
+        latency.setText("12ms");
+        latency.setTextColor(Color.GRAY);
+
+        // Section Divider
+        View sectionDivider = new View(context);
+        sectionDivider.setBackgroundColor(getResources().getColor(R.color.border));
+        statusContainer.addView(sectionDivider, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 1,0, 8, 0, 16));
+
         // Download
+        LinearLayout statusBandwidthContainer = new LinearLayout(context);
+        statusContainer.addView(statusBandwidthContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+        statusBandwidthContainer.setOrientation(LinearLayout.HORIZONTAL);
+        statusBandwidthContainer.setGravity(Gravity.CENTER);
+
         LinearLayout statusDownloadContainer = new LinearLayout(context);
-        statusContainer.addView(statusDownloadContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 1, 1));
+        statusBandwidthContainer.addView(statusDownloadContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 1, 1));
         statusDownloadContainer.setOrientation(LinearLayout.HORIZONTAL);
-        statusDownloadContainer.setGravity(Gravity.CENTER);
+        statusDownloadContainer.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
 
         ImageView statusDownloadIcon = new ImageView(context);
-        statusDownloadContainer.addView(statusDownloadIcon, LayoutHelper.createLinear(48, 48, 0, 0, 12, 0));
+        statusDownloadContainer.addView(statusDownloadIcon, LayoutHelper.createLinear(48, 48, 0, 0, 24, 0));
         statusDownloadIcon.setImageResource(R.drawable.download);
 
         LinearLayout statusDownloadStats = new LinearLayout(context);
@@ -231,20 +244,20 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         // Divider
         View divider = new View(context);
         divider.setBackgroundColor(getResources().getColor(R.color.border));
-        statusContainer.addView(divider, LayoutHelper.createLinear(4, 50,0, 8, 0, 8));
+        statusBandwidthContainer.addView(divider, LayoutHelper.createLinear(4, 50,0, 8, 0, 8));
 
         // Upload
         LinearLayout statusUploadContainer = new LinearLayout(context);
-        statusContainer.addView(statusUploadContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 1, 1));
+        statusBandwidthContainer.addView(statusUploadContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 1, 1));
         statusUploadContainer.setOrientation(LinearLayout.HORIZONTAL);
-        statusUploadContainer.setGravity(Gravity.CENTER);
+        statusUploadContainer.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
 
         ImageView statusUploadIcon = new ImageView(context);
-        statusUploadContainer.addView(statusUploadIcon, LayoutHelper.createLinear(48, 48, 0, 0, 12, 0));
+        statusUploadContainer.addView(statusUploadIcon, LayoutHelper.createLinear(48, 48));
         statusUploadIcon.setImageResource(R.drawable.upload);
 
         LinearLayout statusUploadStats = new LinearLayout(context);
-        statusUploadContainer.addView(statusUploadStats);
+        statusUploadContainer.addView(statusUploadStats, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, 24, 0, 0, 0));
         statusUploadStats.setOrientation(LinearLayout.VERTICAL);
 
         statusUploadSpeed = new TextView(context);
@@ -360,7 +373,6 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         String downloadSpeed = formatBytes(stats[3] - oldStats[3]);
         String uploadSpeed = formatBytes(stats[1] - oldStats[1]);
         oldStats = stats;
-        timeConsumed = time;
 
         if (!isFinishing() && !isDestroyed()) {
         runOnUiThread(() -> {
@@ -368,6 +380,16 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
             statusDownloadSpeed.setText(downloadSpeed);
             statusUploadSpeed.setText(uploadSpeed);
         });
+        }
+    }
+
+    @Override
+    public void onLatencyUpdated(int l) {
+        if (!isFinishing() && !isDestroyed()) {
+            runOnUiThread(() -> {
+                String formattedLatency = l + "ms";
+                latency.setText(formattedLatency);
+            });
         }
     }
 
@@ -421,8 +443,9 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
     }
 
     private void updateCurrentNodeUI(Node node) {
-        countryStatusTitle.setText(node.location);
-        countryStatusIP.setText(node.ip);
+        Log.d("Country", String.valueOf(node.location));
+        statusCountryIp.setText(Util.removeIpSchemes(node.ip));
+        statusDownloadCountry.setText("India");
     }
 
     private void getNearestNode(String ip, int networkPort) {
@@ -454,7 +477,7 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         Dialog dialog = new Dialog(context);
         ProgressBar progressBar = new ProgressBar(context);
 
-        String nodeApiUrl = Util.parseNodeAPIURL(nearestNodeIp, nearestNodeNetworkPort+1);
+        String nodeApiUrl = Util.parseNodeAPIURL(nearestNodeIp, nearestNodeNetworkPort + 1);
         String sol_address = prefs.getSocksUsername();
         clientController.joinClient(nodeApiUrl, targetNodeIp, targetNodeNetworkPort, sol_address, new DataCallbackInterface<Boolean>() {
             @Override
@@ -468,6 +491,7 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
                     stopVPN();
                     // Then start the vpn
                     startVPN(context);
+                    SocketClient.getInstance().connectToServer(Util.removeIpSchemes(nearestNodeIp), nearestNodeNetworkPort + 1);
                 }
             }
 

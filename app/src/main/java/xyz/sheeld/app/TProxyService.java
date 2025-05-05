@@ -171,6 +171,7 @@ public class TProxyService extends VpnService {
         timeConsumed = 0;
         DataManager.getInstance().setData(new long[]{0L, 0L, 0L, 0L}, timeConsumed);
         timer.cancel();
+        SocketClient.getInstance().disconnect();
 //        System.exit(0);
     }
 

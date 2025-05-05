@@ -1,7 +1,5 @@
 package xyz.sheeld.app;
 
-import android.util.Log;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -10,6 +8,7 @@ public class DataManager {
     private final Set<DataUpdateListener> listeners = new HashSet<>();
     private long[] data = new long[4];
     private long timeConsumed = 0;
+    private int latency = 0;
 
     private DataManager() {}
 
@@ -30,6 +29,11 @@ public class DataManager {
         notifyListeners();
     }
 
+    public void setLatency(int newLatency) {
+        this.latency = newLatency;
+        notifyListeners();
+    }
+
     public void addListener(DataUpdateListener listener) {
         listeners.add(listener);
     }
@@ -41,6 +45,7 @@ public class DataManager {
     private void notifyListeners() {
         for (DataUpdateListener listener : listeners) {
             listener.onDataUpdated(data, timeConsumed);
+            listener.onLatencyUpdated(latency);
         }
     }
 }
