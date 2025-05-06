@@ -4,7 +4,6 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.net.VpnService;
@@ -14,8 +13,6 @@ import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -27,11 +24,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.view.ViewCompat;
 
-import org.sol4k.Base58;
-import org.sol4k.Keypair;
-
 import java.util.List;
-import java.util.Objects;
 
 import xyz.sheeld.app.api.controllers.ClientController;
 import xyz.sheeld.app.api.controllers.NetworkController;
@@ -45,7 +38,6 @@ public class SelectCountryActivity extends AppCompatActivity {
     private final ClientController clientController = new ClientController();
     private Preferences prefs;
     private static final int REQUEST_VPN_PERMISSION = 0x0F;
-    private static final String defaultPrivateKey = "53ESETwLEZbKFYtkC3G7qFGzFaTaTWXApU18EWXecVszdMbSDcbfyjxXYZ1fM45gEMMr9zJviN25GVFZV9htrshK";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,80 +70,6 @@ public class SelectCountryActivity extends AppCompatActivity {
 
         linearLayout.setOrientation(LinearLayout.VERTICAL);
         linearLayout.setGravity(Gravity.TOP);
-
-        // Import
-        TextView importTitle = new TextView(context);
-        linearLayout.addView(importTitle, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 24, 0, 0));
-        importTitle.setText("Import Wallet");
-        importTitle.setTypeface(AndroidUtilities.getSemiBoldTypeface(context));
-        importTitle.setTextColor(Color.BLACK);
-
-        TextView importSubTitle = new TextView(context);
-        linearLayout.addView(importSubTitle, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, 0,12));
-        importSubTitle.setText("Enter your private key here to participate for the testnet bounty");
-        importTitle.setTypeface(AndroidUtilities.getRegularTypeface(context));
-        importSubTitle.setTextColor(Color.GRAY);
-
-        GradientDrawable importKeyContainerBackground = new GradientDrawable();
-        importKeyContainerBackground.setStroke(2, getResources().getColor(R.color.border));
-        importKeyContainerBackground.setCornerRadius(12);
-
-        LinearLayout importKeyContainer = new LinearLayout(context);
-        linearLayout.addView(importKeyContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-        importKeyContainer.setBackground(importKeyContainerBackground);
-        importKeyContainer.setPadding(12, 12, 12, 12);
-
-
-        EditText privateKeyEditText = new EditText(context);
-        String privateKey = prefs.getSolanaPrivateKey();
-        if (!Objects.equals(privateKey, defaultPrivateKey)) {
-            privateKeyEditText.setText(privateKey);
-        }
-        importKeyContainer.addView(privateKeyEditText);
-        privateKeyEditText.setPadding(6, 6, 6, 6);
-        privateKeyEditText.setHint("Enter your private key here.");
-        privateKeyEditText.setBackground(null);
-        privateKeyEditText.setTextSize(12);
-
-        GradientDrawable saveButtonBackground = new GradientDrawable();
-        saveButtonBackground.setCornerRadius(12);
-        saveButtonBackground.setColor(getResources().getColor(R.color.primary));
-
-        LinearLayout saveButton = new LinearLayout(context);
-        linearLayout.addView(saveButton, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 12, 0, 0));
-        saveButton.setBackground(saveButtonBackground);
-        saveButton.setPadding(12, 12, 12, 12);
-        saveButton.setOnClickListener(view -> {
-            String pk = String.valueOf(privateKeyEditText.getText());
-            // Decode the Base58-encoded private key
-            byte[] privateKeyBytes = Base58.decode(pk);
-
-            // Ensure the private key is 32 bytes
-            if (privateKeyBytes.length != 64) {
-                Toast.makeText(context, "Invalid private key entered", Toast.LENGTH_SHORT).show();
-            } else {
-                Keypair keyPair = Keypair.fromSecretKey(privateKeyBytes);
-                prefs.setSolanaPrivateKey(pk);
-                prefs.setSocksUsername(keyPair.getPublicKey().toBase58());
-                privateKeyEditText.clearFocus();
-                finish();
-                Toast.makeText(context, "Wallet imported successfully🥳", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-
-        TextView saveButtonTitle = new TextView(context);
-        saveButton.addView(saveButtonTitle, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-        saveButtonTitle.setGravity(Gravity.CENTER);
-        saveButtonTitle.setText("Save");
-        saveButtonTitle.setTextColor(Color.WHITE);
-
-
-        // Section Divider
-        View sectionDivider = new View(context);
-        sectionDivider.setBackgroundColor(getResources().getColor(R.color.border));
-        linearLayout.addView(sectionDivider, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 1,0, 24, 0, 0));
-
 
         // Nodes List
         nodesContainer = new LinearLayout(context);

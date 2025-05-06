@@ -25,7 +25,6 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.ViewCompat;
 
-import java.net.Socket;
 import java.util.List;
 
 import xyz.sheeld.app.api.controllers.ClientController;
@@ -93,6 +92,27 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         titleContainer.addView(sheeldIcon, LayoutHelper.createLinear(200, 150));
         sheeldIcon.setImageResource(R.drawable.logo);
 
+        // Wallet Settings
+        LinearLayout walletIconParentContainer = new LinearLayout(context);
+        topNavigationContainer.addView(walletIconParentContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 30, 0, 0));
+        walletIconParentContainer.setGravity(Gravity.START);
+
+        LinearLayout walletIconContainer = new LinearLayout(context);
+        walletIconParentContainer.addView(walletIconContainer, LayoutHelper.createLinear(60, 60, 0, 12, 0, 0));
+        walletIconContainer.setOnClickListener(view -> {
+            Intent intent = new Intent(MainActivity.this, WalletActivity.class);
+            startActivity(intent);
+        });
+        walletIconContainer.setGravity(Gravity.CENTER);
+        GradientDrawable walletGradient = new GradientDrawable();
+        walletGradient.setCornerRadius(12);
+        walletGradient.setStroke(2, getResources().getColor(R.color.border));
+        walletIconContainer.setBackground(walletGradient);
+        ImageView walletIcon = new ImageView(context);
+        walletIconContainer.addView(walletIcon, LayoutHelper.createLinear(30, 30));
+        walletIcon.setImageResource(R.drawable.adjustments);
+
+        // Settings
         LinearLayout settingsIconParentContainer = new LinearLayout(context);
         topNavigationContainer.addView(settingsIconParentContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 30, 0, 0));
         settingsIconParentContainer.setGravity(Gravity.END);

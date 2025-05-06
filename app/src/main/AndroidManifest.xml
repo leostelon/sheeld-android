@@ -24,6 +24,8 @@
         </activity>
         <activity android:name=".SelectCountryActivity"
             android:theme="@style/Theme.AppCompat.Light.DarkActionBar"/>
+        <activity android:name=".WalletActivity"
+            android:theme="@style/Theme.AppCompat.Light.DarkActionBar"/>
 
         <!-- VpnService declaration -->
         <service android:name=".TProxyService"
