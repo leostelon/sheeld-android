@@ -24,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.view.ViewCompat;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import xyz.sheeld.app.api.controllers.ClientController;
@@ -38,6 +39,7 @@ public class SelectCountryActivity extends AppCompatActivity {
     private final ClientController clientController = new ClientController();
     private Preferences prefs;
     private static final int REQUEST_VPN_PERMISSION = 0x0F;
+    private Node selectedNode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,6 +117,7 @@ public class SelectCountryActivity extends AppCompatActivity {
         connect.setTextColor(getResources().getColor(R.color.primary));
         connect.setTypeface(AndroidUtilities.getSemiBoldTypeface(context));
         connect.setOnClickListener(view -> {
+            selectedNode = node;
             prefs.setNode(node);
             getNearestNode(node.ip, node.networkPort);
         });
@@ -129,9 +132,13 @@ public class SelectCountryActivity extends AppCompatActivity {
 
        networkController.getNearestNode(ip, networkPort, new DataCallbackInterface<Node>() {
             @Override
-            public void onSuccess(Node node) {
+            public void onSuccess(Node nearestNode) {
                 dialog.dismiss();
-                connectToNearestNode(node.ip, node.networkPort, ip, networkPort);
+                List<Node> circuit = new ArrayList<>();
+                circuit.add(nearestNode);
+                circuit.add(selectedNode);
+                DataManager.getInstance().setCircuit(circuit);
+                connectToNearestNode(nearestNode.ip, nearestNode.networkPort, ip, networkPort);
             }
 
             @Override
@@ -226,7 +233,7 @@ public class SelectCountryActivity extends AppCompatActivity {
 
         Intent vpnIntent = new Intent(this, TProxyService.class);
         startService(vpnIntent.setAction(TProxyService.ACTION_CONNECT));
-        Toast.makeText(context, "Connected to India", Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, "Connected to " + selectedNode.location, Toast.LENGTH_SHORT).show();
         finish();
     }
 

@@ -10,6 +10,10 @@ import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.net.VpnService;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.RelativeSizeSpan;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -25,6 +29,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.ViewCompat;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import xyz.sheeld.app.api.controllers.ClientController;
@@ -47,7 +52,9 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
     private Node node;
     private TextView statusCountryIp;
     private TextView statusDownloadCountry;
+    private SpannableString statusDownloadCountrySpannable;
     private TextView latency;
+    private List<Node> circuit;
 
     // Animation Components
     private View connectButtonWaveView;
@@ -219,6 +226,12 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         statusDownloadCountry = new TextView(context);
         statusCountryStats.addView(statusDownloadCountry);
         statusDownloadCountry.setTypeface(AndroidUtilities.getMediumTypeface(context));
+        statusDownloadCountry.setOnClickListener(view -> {
+            if (circuit != null && circuit.size() == 2) {
+                String message = "Connected to " + circuit.get(1).location + " via " + circuit.get(0).location;
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show();
+            }
+        });
 
         statusCountryIp = new TextView(context);
         statusCountryStats.addView(statusCountryIp);
@@ -425,6 +438,17 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         }
     }
 
+    @Override
+    public void onCircuitUpdated(List<Node> c) {
+        circuit = c;
+        node = c.get(1);
+        String path = c.get(1).location + "(" + c.get(0).location+")";
+        statusDownloadCountrySpannable = new SpannableString(path);
+        statusDownloadCountrySpannable.setSpan(new ForegroundColorSpan(Color.GRAY), c.get(1).location.length(), path.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        statusDownloadCountrySpannable.setSpan(new RelativeSizeSpan(0.5f), c.get(1).location.length(), path.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        statusDownloadCountry.setText(statusDownloadCountrySpannable);
+    }
+
     public static String formatBytes(long bytes) {
         if (bytes < 0) {
             bytes = 0;
@@ -489,9 +513,13 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
 
         networkController.getNearestNode(ip, networkPort, new DataCallbackInterface<Node>() {
             @Override
-            public void onSuccess(Node node) {
+            public void onSuccess(Node nearestNode) {
                 dialog.dismiss();
-                connectToNearestNode(node.ip, node.networkPort, ip, networkPort);
+                List<Node> circuit = new ArrayList<>();
+                circuit.add(nearestNode);
+                circuit.add(node);
+                DataManager.getInstance().setCircuit(circuit);
+                connectToNearestNode(nearestNode.ip, nearestNode.networkPort, ip, networkPort);
             }
 
             @Override

@@ -1,7 +1,11 @@
 package xyz.sheeld.app;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+
+import xyz.sheeld.app.api.types.Node;
 
 public class DataManager {
     private static DataManager instance;
@@ -9,7 +13,8 @@ public class DataManager {
     private long[] data = new long[4];
     private long timeConsumed = 0;
     private int latency = 0;
-    private enum NOTIFY_TYPE {DATA, LATENCY, TIME,}
+    private List<Node> circuit = new ArrayList<>();
+    private enum NOTIFY_TYPE {DATA, LATENCY, TIME, CIRCUIT,}
 
     private DataManager() {}
 
@@ -39,6 +44,11 @@ public class DataManager {
         notifyListeners(NOTIFY_TYPE.TIME);
     }
 
+    public void setCircuit(List<Node> circuit) {
+        this.circuit = circuit;
+        notifyListeners(NOTIFY_TYPE.CIRCUIT);
+    }
+
     public void addListener(DataUpdateListener listener) {
         listeners.add(listener);
     }
@@ -53,6 +63,7 @@ public class DataManager {
                 case DATA: listener.onDataUpdated(data);
                 case TIME: listener.onTimeUpdated(timeConsumed);
                 case LATENCY: listener.onLatencyUpdated(latency);
+                case CIRCUIT: listener.onCircuitUpdated(circuit);
             }
         }
     }
