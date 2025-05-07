@@ -4,6 +4,8 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.google.gson.Gson;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,6 +24,39 @@ public class NetworkController {
 
     public void getNodes(final DataCallbackInterface<List<Node>> callback) {
         Call<List<GetNearestNodeResponseDTO>> call = apiService.getNodes();
+
+        call.enqueue(
+                new Callback<List<GetNearestNodeResponseDTO>>() {
+                    @Override
+                    public void onResponse(@NonNull Call<List<GetNearestNodeResponseDTO>> call, @NonNull Response<List<GetNearestNodeResponseDTO>> response) {
+                        if (response.isSuccessful() && response.code() == 200) {
+                            if (response.body() != null) {
+                                List<GetNearestNodeResponseDTO> data = response.body();
+                                List<Node> nodeList = data.stream().map(n -> {
+                                    Node node = new Node();
+                                    node.ip = n.ip;
+                                    node.networkPort = n.networkPort;
+                                    node.apiPort = n.apiPort;
+                                    node.joinedAt = n.joinedAt;
+                                    node.location = n.location;
+                                    return node;
+                                }).collect(Collectors.toList());
+                                callback.onSuccess(nodeList);
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<List<GetNearestNodeResponseDTO>> call, @NonNull Throwable throwable) {
+                        Log.e("getsNodes", throwable.toString());
+                        callback.onFailure(throwable);
+                    }
+                }
+        );
+    }
+
+    public void getBootNodes(final DataCallbackInterface<List<Node>> callback) {
+        Call<List<GetNearestNodeResponseDTO>> call = apiService.getBootNodes();
 
         call.enqueue(
                 new Callback<List<GetNearestNodeResponseDTO>>() {

@@ -25,16 +25,14 @@ public class WalletController {
             new Callback<PostWalletOverviewResponseDTO>() {
                 @Override
                 public void onResponse(@NonNull Call<PostWalletOverviewResponseDTO> call, @NonNull Response<PostWalletOverviewResponseDTO> response) {
+                    PostWalletOverviewResponseDTO data = new PostWalletOverviewResponseDTO();
                     if (response.isSuccessful() && response.code() == 200) {
                         if (response.body() != null) {
-                            PostWalletOverviewResponseDTO data = response.body();
+                            data = response.body();
                             callback.onSuccess(data);
                         }
-                    } else if (response.code() == 404) {
-                            callback.onFailure(new Error("No client found with the provided wallet address"));
                     } else {
-                        String message = "Something went wrong while connecting to nearest node";
-                        callback.onFailure(new Error(message));
+                        callback.onSuccess(data);
                     }
                 }
 

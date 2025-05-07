@@ -445,13 +445,13 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
     private void getCurrentNode() {
         node = prefs.getNode();
         if (node == null) {
-            getBootNodes();
+            getNodes();
         } else {
             updateCurrentNodeUI(node);
         }
     }
 
-    private void getBootNodes() {
+    private void getNodes() {
         Context context = MainActivity.this;
         Dialog dialog = new Dialog(context);
         ProgressBar progressBar = new ProgressBar(context);

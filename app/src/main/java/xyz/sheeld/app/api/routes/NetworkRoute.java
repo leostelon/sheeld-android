@@ -12,4 +12,7 @@ public interface NetworkRoute {
 
     @GET("/network/all-nodes")
     Call<List<GetNearestNodeResponseDTO>> getNodes();
+
+    @GET("/network/all-boot-nodes")
+    Call<List<GetNearestNodeResponseDTO>> getBootNodes();
 }

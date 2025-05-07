@@ -25,14 +25,21 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.view.ViewCompat;
 
+import com.google.gson.Gson;
+
 import org.sol4k.Base58;
 import org.sol4k.Keypair;
 
+import java.util.List;
 import java.util.Objects;
 
+import xyz.sheeld.app.api.controllers.ClientController;
+import xyz.sheeld.app.api.controllers.NetworkController;
 import xyz.sheeld.app.api.controllers.WalletController;
 import xyz.sheeld.app.api.dtos.PostWalletOverviewResponseDTO;
 import xyz.sheeld.app.api.interfaces.DataCallbackInterface;
+import xyz.sheeld.app.api.types.Node;
+import xyz.sheeld.app.vpn.VPN;
 
 public class WalletActivity extends AppCompatActivity {
     private Preferences prefs;
@@ -41,8 +48,10 @@ public class WalletActivity extends AppCompatActivity {
     private TextView balance;
     private boolean planExpired = true;
     private TextView upgradeButtonTitle;
-    private boolean walletConnectedToClient = false;
     private LinearLayout walletContainer;
+    private final ClientController clientController = new ClientController();
+    private final NetworkController networkController = new NetworkController();
+    private List<Node> bootNodes;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -220,12 +229,14 @@ public class WalletActivity extends AppCompatActivity {
         walletController.getWalletOverview(solAddress, new DataCallbackInterface<PostWalletOverviewResponseDTO>() {
             @Override
             public void onSuccess(PostWalletOverviewResponseDTO overview) {
-                dialog.dismiss();
                 balance.setText(String.valueOf(overview.balance));
-                walletConnectedToClient = true;
                 if (!overview.planExpired) {
                     upgradeButtonTitle.setText("Pro User⭐");
                     planExpired = false;
+                }
+                dialog.dismiss();
+                if (!overview.clientConnected) {
+                    getBootNodes();
                 }
             }
 
@@ -254,12 +265,6 @@ public class WalletActivity extends AppCompatActivity {
             return;
         }
 
-        if (!walletConnectedToClient) {
-            Toast.makeText(context, "Please connect to VPN at least once to proceed with pro plan.", Toast.LENGTH_LONG).show();
-            dialog.dismiss();
-            return;
-        }
-
         new Thread(() -> {
             try {
                 CryptoService.sendTransaction(context);
@@ -274,6 +279,77 @@ public class WalletActivity extends AppCompatActivity {
                 });
             }
         }).start();
+    }
+
+    private void getBootNodes() {
+        Context context = WalletActivity.this;
+        Dialog dialog = new Dialog(context);
+        dialog.setCancelable(false);
+        ProgressBar progressBar = new ProgressBar(context);
+
+        networkController.getBootNodes(new DataCallbackInterface<List<Node>>() {
+            @Override
+            public void onSuccess(List<Node> nodes) {
+                if(!nodes.isEmpty()) {
+                    bootNodes = nodes;
+                    Node node = bootNodes.get(0);
+                    getNearestNode(node.ip, node.networkPort);
+                    dialog.dismiss();
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                Log.d("getNetworks", t.toString());
+                dialog.dismiss();
+            }
+        });
+
+        dialog.setContentView(progressBar);
+        dialog.show();
+    }
+
+    private void getNearestNode(String ip, int networkPort) {
+        networkController.getNearestNode(ip, networkPort, new DataCallbackInterface<Node>() {
+            @Override
+            public void onSuccess(Node node) {
+                // Connect to boot node and proxy
+                connectToNearestNode(ip, networkPort, node.ip, node.networkPort);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                Log.d("getNearestNode", t.toString());
+            }
+        });
+    }
+
+    private void connectToNearestNode(String nearestNodeIp, int nearestNodeNetworkPort, String targetNodeIp, int targetNodeNetworkPort) {
+        Context context = WalletActivity.this;
+        Dialog dialog = new Dialog(context);
+        ProgressBar progressBar = new ProgressBar(context);
+
+        String nodeApiUrl = Util.parseNodeAPIURL(nearestNodeIp, nearestNodeNetworkPort + 1);
+
+        String sol_address = prefs.getSocksUsername();
+        String pk = prefs.getSolanaPrivateKey();
+        String signature = CryptoService.signMessage(pk);
+
+        clientController.joinClient(nodeApiUrl, targetNodeIp, targetNodeNetworkPort, sol_address, signature, new DataCallbackInterface<Boolean>() {
+            @Override
+            public void onSuccess(Boolean result) {
+                dialog.dismiss();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                dialog.dismiss();
+                Log.d("connectToNearestNode", t.toString());
+                Toast.makeText(context, t.toString(), Toast.LENGTH_LONG).show();
+            }
+        });
+        dialog.setContentView(progressBar);
+        dialog.show();
     }
 
     @Override
