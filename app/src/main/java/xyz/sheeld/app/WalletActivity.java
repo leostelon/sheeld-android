@@ -111,35 +111,29 @@ public class WalletActivity extends AppCompatActivity {
         upgradeButtonBackground.setColor(getResources().getColor(R.color.primary));
 
         LinearLayout upgradeButton = new LinearLayout(context);
-        walletContainer.addView(upgradeButton, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 12, 0, 0));
+        walletContainer.addView(upgradeButton, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 12, 0, 12));
         upgradeButton.setBackground(upgradeButtonBackground);
         upgradeButton.setPadding(12, 12, 12, 12);
-        upgradeButton.setOnClickListener(view -> {
-            if(!planExpired) {
-                Toast.makeText(context, "You are a pro user already⭐", Toast.LENGTH_LONG).show();
-            } else {
-                if(!walletConnectedToClient) {
-                    Toast.makeText(context, "Please connect to VPN atleast once to proceed with pro plan.", Toast.LENGTH_LONG).show();
-                } else {
-                    new Thread(() -> {
-                        try {
-                            CryptoService.sendTransaction(context);
-                        }  catch (Exception e) {
-                            Toast.makeText(context, e.getMessage(), Toast.LENGTH_LONG).show();
-                        }
-                        runOnUiThread(() -> {
-                            Toast.makeText(context, "Verifying payment, check back later.", Toast.LENGTH_LONG).show();
-                        });
-                    }).start();
-                }
-            }
-        });
+        upgradeButton.setOnClickListener(view -> upgradeHandler());
 
         upgradeButtonTitle = new TextView(context);
         upgradeButton.addView(upgradeButtonTitle, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
         upgradeButtonTitle.setGravity(Gravity.CENTER);
         upgradeButtonTitle.setText("Upgrade");
         upgradeButtonTitle.setTextColor(Color.WHITE);
+
+        // Payment description
+        TextView note = new TextView(context);
+        walletContainer.addView(note);
+        note.setText("Note:");
+        note.setTypeface(AndroidUtilities.getMediumTypeface(context));
+        note.setTextColor(Color.BLACK);
+
+        TextView noteSub = new TextView(context);
+        walletContainer.addView(noteSub);
+        noteSub.setText("Transaction takes place on Devnet and Pro plan costs 0.001SOL");
+        noteSub.setTypeface(AndroidUtilities.getRegularTypeface(context));
+        noteSub.setTextColor(Color.GRAY);
 
         // Section Divider
         View sectionDivider = new View(context);
@@ -223,7 +217,6 @@ public class WalletActivity extends AppCompatActivity {
         Dialog dialog = new Dialog(context);
         ProgressBar progressBar = new ProgressBar(context);
 
-
         walletController.getWalletOverview(solAddress, new DataCallbackInterface<PostWalletOverviewResponseDTO>() {
             @Override
             public void onSuccess(PostWalletOverviewResponseDTO overview) {
@@ -245,6 +238,42 @@ public class WalletActivity extends AppCompatActivity {
         });
         dialog.setContentView(progressBar);
         dialog.show();
+    }
+
+    private void upgradeHandler() {
+        Context context = WalletActivity.this;
+        Dialog dialog = new Dialog(context);
+        ProgressBar progressBar = new ProgressBar(context);
+
+        dialog.setContentView(progressBar);
+        dialog.show();
+
+        if (!planExpired) {
+            Toast.makeText(context, "You are a pro user already⭐", Toast.LENGTH_LONG).show();
+            dialog.dismiss();
+            return;
+        }
+
+        if (!walletConnectedToClient) {
+            Toast.makeText(context, "Please connect to VPN at least once to proceed with pro plan.", Toast.LENGTH_LONG).show();
+            dialog.dismiss();
+            return;
+        }
+
+        new Thread(() -> {
+            try {
+                CryptoService.sendTransaction(context);
+                runOnUiThread(() -> {
+                    Toast.makeText(context, "Verifying payment, check back later.", Toast.LENGTH_LONG).show();
+                    dialog.dismiss();
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    Toast.makeText(context, e.getMessage(), Toast.LENGTH_LONG).show();
+                    dialog.dismiss();
+                });
+            }
+        }).start();
     }
 
     @Override
