@@ -2,14 +2,17 @@ package xyz.sheeld.app;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
@@ -352,11 +355,44 @@ public class WalletActivity extends AppCompatActivity {
     }
 
     @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if (item.getItemId() == android.R.id.home) {
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuItem tweetItem = menu.add(Menu.NONE, 1, Menu.NONE, "Tweet");
+
+        // Set icon and display options
+        tweetItem.setIcon(R.drawable.twitter);
+        tweetItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == 1) {
+            if (!planExpired) {
+                handleTwitterPost();
+                return false;
+            } else {
+                Toast.makeText(this, "Please upgrade to post on X.", Toast.LENGTH_SHORT).show();
+                return true;
+            }
+        } else if (item.getItemId() == android.R.id.home) {
             finish();
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void handleTwitterPost() {
+        String wa = prefs.getSocksUsername();
+        String tweetText = "Just tried out this new decentralized VPN — full anonymity, zero logs, and no central servers 👀🔥\n" +
+                "Surprisingly smooth and fast. Definitely one to watch.\n\n" +
+                "Thanks for the heads-up @sheeldvpn @colosseum 💡\n" +
+                "👉 https://sheeld.xyz\n\n" +
+                "#Privacy\n" +
+                wa.substring(wa.length() - 6);
+        String tweetUrl = "https://twitter.com/intent/tweet?text=" + Uri.encode(tweetText);
+
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(tweetUrl));
+        startActivity(intent);
     }
 }
