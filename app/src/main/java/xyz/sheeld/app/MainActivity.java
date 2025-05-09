@@ -117,7 +117,7 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         walletIconContainer.setBackground(walletGradient);
         ImageView walletIcon = new ImageView(context);
         walletIconContainer.addView(walletIcon, LayoutHelper.createLinear(30, 30));
-        walletIcon.setImageResource(R.drawable.adjustments);
+        walletIcon.setImageResource(R.drawable.wallet);
 
         // Settings
         LinearLayout settingsIconParentContainer = new LinearLayout(context);
@@ -137,7 +137,7 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         settingsIconContainer.setBackground(settingsGradient);
         ImageView settingsIcon = new ImageView(context);
         settingsIconContainer.addView(settingsIcon, LayoutHelper.createLinear(30, 30));
-        settingsIcon.setImageResource(R.drawable.adjustments);
+        settingsIcon.setImageResource(R.drawable.settings);
 
         LinearLayout connectedStatusButton = new LinearLayout(context);
         linearLayout.addView(connectedStatusButton, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 0, 0, 0, 12));
