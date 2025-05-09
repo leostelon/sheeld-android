@@ -105,7 +105,7 @@ public class SelectCountryActivity extends AppCompatActivity {
         // IP
         TextView ip = new TextView(context);
         descriptionContainer.addView(ip);
-        ip.setText(node.ip+":"+node.networkPort);
+        ip.setText(Util.removeIpSchemes(node.ip));
         ip.setTextColor(Color.GRAY);
         ip.setTypeface(AndroidUtilities.getRegularTypeface(context));
 
@@ -229,7 +229,7 @@ public class SelectCountryActivity extends AppCompatActivity {
         }
 
         prefs.setDnsIpv4("");
-        prefs.setDnsIpv6("");
+        prefs.setIpv6(false);
 
         Intent vpnIntent = new Intent(this, TProxyService.class);
         startService(vpnIntent.setAction(TProxyService.ACTION_CONNECT));

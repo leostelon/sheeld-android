@@ -206,7 +206,6 @@ public class WalletActivity extends AppCompatActivity {
                 privateKeyEditText.clearFocus();
                 finish();
                 walletContainer.setVisibility(View.VISIBLE);
-                getBalance(base58PublicKey);
                 Toast.makeText(context, "Wallet imported successfully🥳", Toast.LENGTH_SHORT).show();
             }
         });
