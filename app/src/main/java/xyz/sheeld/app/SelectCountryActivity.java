@@ -227,14 +227,25 @@ public class SelectCountryActivity extends AppCompatActivity {
         } else {
             onActivityResult(REQUEST_VPN_PERMISSION, RESULT_OK, null);
         }
+    }
 
-        prefs.setDnsIpv4("");
-        prefs.setIpv6(false);
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
 
-        Intent vpnIntent = new Intent(this, TProxyService.class);
-        startService(vpnIntent.setAction(TProxyService.ACTION_CONNECT));
-        Toast.makeText(context, "Connected to " + selectedNode.location, Toast.LENGTH_SHORT).show();
-        finish();
+        if (requestCode == REQUEST_VPN_PERMISSION) {
+            if (resultCode == RESULT_OK) {
+                prefs.setDnsIpv4("");
+                prefs.setIpv6(false);
+
+                Intent vpnIntent = new Intent(this, TProxyService.class);
+                startService(vpnIntent.setAction(TProxyService.ACTION_CONNECT));
+                Toast.makeText(this, "Connected to " + selectedNode.location, Toast.LENGTH_SHORT).show();
+                finish();
+            } else {
+                Toast.makeText(this, "VPN permission denied. Cannot start VPN.", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     private void stopVPN() {

@@ -183,8 +183,8 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         connectButton.setPadding(24,12, 24, 12);
         connectButton.setOnClickListener(view -> {
             boolean isEnable = prefs.getEnable();
-            prefs.setEnable(!isEnable);
             if (isEnable) {
+                prefs.setEnable(false);
                 stopVPN();
             } else {
                 if (node != null) {
@@ -362,14 +362,26 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         } else {
             onActivityResult(REQUEST_VPN_PERMISSION, RESULT_OK, null);
         }
+    }
 
-        Intent vpnIntent = new Intent(this, TProxyService.class);
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
 
-        prefs.setDnsIpv4("");
-        prefs.setIpv6(false);
+        if (requestCode == REQUEST_VPN_PERMISSION) {
+            if (resultCode == RESULT_OK) {
+                prefs.setEnable(true);
+                Intent vpnIntent = new Intent(this, TProxyService.class);
 
-        startService(vpnIntent.setAction(TProxyService.ACTION_CONNECT));
-        updateStates();
+                prefs.setDnsIpv4("");
+                prefs.setIpv6(false);
+
+                startService(vpnIntent.setAction(TProxyService.ACTION_CONNECT));
+                updateStates();
+            } else {
+                Toast.makeText(this, "VPN permission denied. Cannot start VPN.", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     private void stopVPN() {
