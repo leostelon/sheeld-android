@@ -458,7 +458,7 @@ public class MainActivity extends AppCompatActivity implements DataUpdateListene
         statusDownloadCountrySpannable = new SpannableString(path);
         statusDownloadCountrySpannable.setSpan(new ForegroundColorSpan(Color.GRAY), c.get(1).location.length(), path.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         statusDownloadCountrySpannable.setSpan(new RelativeSizeSpan(0.5f), c.get(1).location.length(), path.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        statusDownloadCountry.setText(statusDownloadCountrySpannable);
+        runOnUiThread(() -> statusDownloadCountry.setText(statusDownloadCountrySpannable));
     }
 
     public static String formatBytes(long bytes) {
