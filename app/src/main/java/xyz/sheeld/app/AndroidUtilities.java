@@ -21,6 +21,11 @@ public class AndroidUtilities {
         return (int) Math.ceil(density * value);
     }
 
+    public static int dpToPx(int dp, Context context) {
+        float density = context.getResources().getDisplayMetrics().density;
+        return Math.round(dp * density);
+    }
+
     public static Typeface getLightTypeface(Context context) {
         return ResourcesCompat.getFont(context, R.font.poppins_light);
     }
